@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
 	private Rigidbody _rigidBody;
 	private SpriteRenderer _spaceshipSpriteRenderer;
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
+	private AudioSource _spaceshipThrusterAudioSource;
 
     public Text fuelRemainingText;
 
@@ -48,6 +49,7 @@ public class PlayerController : MonoBehaviour
         _rigidBody = GetComponent<Rigidbody>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
+	    _spaceshipThrusterAudioSource = GetComponentInChildren<AudioSource>();
     }
 	
 	//The update function runs each frame
@@ -56,7 +58,7 @@ public class PlayerController : MonoBehaviour
 		// obtain the movements
 		// (if there is no fuel, disable thrusters)
         float inputX = Input.GetAxis("Horizontal");
-        float inputY = RemainingFuel > 0 ? Input.GetAxis("Vertical") : 0;
+        float inputY = RemainingFuel > 0 ? (Input.GetAxis("Vertical") * 5000).ClampMagnitude(1) : 0;
 
 		// burn fuel (burn more fuel when thrusters are engaged)
 		ThrustersEngaged = (Math.Abs(inputY) > float.Epsilon);
@@ -89,6 +91,8 @@ public class PlayerController : MonoBehaviour
 		var shown = new Color(1, 1, 1, 1);
 		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
 			spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name.ToLower()) ? shown : hidden;
+
+		_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 	}
 
 	//Display the 
@@ -106,6 +110,16 @@ public class PlayerController : MonoBehaviour
 
 public static class HashSetExtensions
 {
+	public static float ClampMagnitude(this float value, float clamp)
+	{
+		if (value > clamp)
+			return clamp;
+		if (value < -clamp)
+			return -clamp;
+
+		return 0;
+	}
+
 	public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> range)
 	{
 		foreach (var item in range)
