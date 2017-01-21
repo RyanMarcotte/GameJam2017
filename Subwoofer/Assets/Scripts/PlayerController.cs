@@ -14,18 +14,22 @@ public class PlayerController : MonoBehaviour {
         //Obtain a reference to the rigid body
         rb = GetComponent<Rigidbody>();
 
-        speed = 10;
+        speed = 100;
     }
 	
 	//The update function runs each frame
 	void FixedUpdate ()
     {
         //Obtain the movements
-        float moveHorizontal = Input.GetAxis("Horizontal");
+        //float moveHorizontal = Input.GetAxis("Horizontal");
         float moveVertical = Input.GetAxis("Vertical");
 
+		if (moveVertical > 0)
+			rb.velocity = new Vector3(0.0f, 0.0f, 0.0f);
+		
         //Apply the movements
-        Vector2 movement = new Vector2(moveHorizontal, moveVertical);
+        Vector2 movement = new Vector2(0.0f, moveVertical);
+
         rb.AddForce(movement * speed);
     }
 }
