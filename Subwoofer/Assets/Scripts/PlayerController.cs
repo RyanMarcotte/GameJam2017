@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class PlayerController : MonoBehaviour
 	private SpriteRenderer _spaceshipSpriteRenderer;
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
 	private IEnumerable<SpriteRenderer> _spaceshipBackThrusterSpriteRenderers;
+
+    public Text fuelRemainingText;
 
 	/// <summary>
 	/// Gets the ship's rotation.
@@ -40,9 +43,10 @@ public class PlayerController : MonoBehaviour
     {
 		ThrustersEngaged = false;
 	    RemainingFuel = MaximumFuel = 50000;
+        updateFuel();
 
-		// obtain a reference to the rigid body
-		_rigidBody = GetComponent<Rigidbody2D>();
+        // obtain a reference to the rigid body
+        _rigidBody = GetComponent<Rigidbody2D>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("mainthruster"));
 	    _spaceshipBackThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("backthruster"));
@@ -59,6 +63,7 @@ public class PlayerController : MonoBehaviour
 		// burn fuel (burn more fuel when thrusters are engaged)
 		ThrustersEngaged = (Math.Abs(inputY) > float.Epsilon);
 		RemainingFuel -= ThrustersEngaged ? 5 : 1;
+        updateFuel();
 
 		// apply thrust and rotation
 		
@@ -78,4 +83,9 @@ public class PlayerController : MonoBehaviour
 		foreach (var spriteRenderer in _spaceshipBackThrusterSpriteRenderers)
 			spriteRenderer.color = inputY < 0 ? shown : hidden;
 	}
+
+    void updateFuel()
+    {
+        fuelRemainingText.text = RemainingFuel.ToString();
+    }
 }
