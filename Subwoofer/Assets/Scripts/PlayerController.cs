@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
 	private const int MAXIMUM_HEALTH = 1000;
-	private const int MAXIMUM_FUEL = 5000;
+	private const int MAXIMUM_FUEL = 1000;
 
 	private const char UI_CHARACTER = '|';
 	private const int UI_SCALE = 2;
@@ -192,8 +192,14 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void OnCollisionEnter(Collision other)
     {
-        Debug.Log("collided");
-		
+        //If the ship is out of fuel, end the game
+        if(RemainingFuel <= 0)
+        {
+            _spaceshipExplosionAudioSource.Play();
+            _spaceshipSpriteRenderer.color = new Color(_spaceshipSpriteRenderer.color.r, _spaceshipSpriteRenderer.color.g, _spaceshipSpriteRenderer.color.b, 0);
+            return;
+        }
+
 		// play random collision sound effect
 	    _spaceshipWallCollisionAudioSourceCollection.ElementAt(_rng.Next(0, _spaceshipWallCollisionAudioSourceCollection.Count())).Play();
 
