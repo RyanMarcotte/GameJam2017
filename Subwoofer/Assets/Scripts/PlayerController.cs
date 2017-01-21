@@ -25,6 +25,7 @@ public class PlayerController : MonoBehaviour
 	private const string FUEL_REMAINING_TEXT_FORMAT = "FUEL   : {0}";
 
 	//Use of rigid body allows the physics engine to apply
+	private readonly System.Random _rng = new System.Random();
 	private Rigidbody _rigidBody;
 	private SpriteRenderer _spaceshipSpriteRenderer;
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
@@ -82,9 +83,9 @@ public class PlayerController : MonoBehaviour
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
 	    
 		var allAudioSources = GetComponentsInChildren<AudioSource>();
-	    _spaceshipThrusterAudioSource = allAudioSources.FirstOrDefault(x => string.Compare(x.name, "thruster", StringComparison.OrdinalIgnoreCase) == 0);
-	    _spaceshipWallCollisionAudioSourceCollection = allAudioSources.Where(x => string.Compare(x.name, "hitWall", StringComparison.OrdinalIgnoreCase) == 0);
-		_spaceshipExplosionAudioSource = allAudioSources.FirstOrDefault(x => string.Compare(x.name, "explosion", StringComparison.OrdinalIgnoreCase) == 0);
+	    _spaceshipThrusterAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipThrusterLoop") == 0);
+	    _spaceshipWallCollisionAudioSourceCollection = allAudioSources.Where(x => x.clip.name.ToLower().Contains("hitwall"));
+		_spaceshipExplosionAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipExplosion") == 0);
 	}
 	
 	//The update function runs each frame
@@ -108,7 +109,7 @@ public class PlayerController : MonoBehaviour
 			else if ((constrainedRotation > 180 && constrainedRotation < 360) || (constrainedRotation > -180 && constrainedRotation < 0))
 				_deathRotation = AutomaticRotation.Left;
 			else
-				_deathRotation = new System.Random().Next(0, 100) > 50 ? AutomaticRotation.Right : AutomaticRotation.Left;
+				_deathRotation = _rng.Next(0, 100) > 50 ? AutomaticRotation.Right : AutomaticRotation.Left;
 		}
 
 		if (RemainingFuel <= 0)
@@ -173,6 +174,9 @@ public class PlayerController : MonoBehaviour
     void OnCollisionEnter(Collision other)
     {
         Debug.Log("collided");
+		
+		// play random collision sound effect
+	    _spaceshipWallCollisionAudioSourceCollection.ElementAt(_rng.Next(0, _spaceshipWallCollisionAudioSourceCollection.Count())).Play();
     }
 
     void UpdateUI()
