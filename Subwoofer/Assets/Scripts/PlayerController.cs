@@ -12,6 +12,8 @@ public class PlayerController : MonoBehaviour
 	private const int MAXIMUM_HEALTH = 1000;
 	private const int MAXIMUM_FUEL = 50000;
 
+	private const char UI_CHARACTER = '|';
+	private const int UI_SCALE = 2;
 	private const string HEALTH_REMAINING_TEXT_FORMAT = "HEALTH : {0}";
 	private const string FUEL_REMAINING_TEXT_FORMAT = "FUEL   : {0}";
 
@@ -115,10 +117,9 @@ public class PlayerController : MonoBehaviour
 
 	void UpdateHealth()
 	{
-		const int SCALE = 2;
 		int healthRemainingPercentage = GetPercentage(RemainingHealth, MaximumHealth);
-		HealthRemainingText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string('|', healthRemainingPercentage / SCALE));
-		HealthRemainingBackendText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string('|', 100 / SCALE));
+		HealthRemainingText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, healthRemainingPercentage / UI_SCALE));
+		HealthRemainingBackendText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100 / UI_SCALE));
 	}
 
     /// <summary>
@@ -126,10 +127,9 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void UpdateFuel()
     {
-		const int SCALE = 2;
 		int fuelRemainingPercentage = GetPercentage(RemainingFuel, MaximumFuel);
-		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string('|', fuelRemainingPercentage / SCALE));
-		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string('|', 100 / SCALE));
+		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, fuelRemainingPercentage / UI_SCALE));
+		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100 / UI_SCALE));
 
 		if (fuelRemainingPercentage > 66)
 			FuelRemainingText.color = Color.green;
