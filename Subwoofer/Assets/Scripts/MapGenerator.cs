@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public enum MapFillValues : int
@@ -11,9 +12,20 @@ public enum MapFillValues : int
 
 public class MapGenerator : MonoBehaviour
 {
-    private int[,] _map;
+    public int[,] Map;
+	public List<Room> SurvivingRooms;
 
-    [Range(0, 100)]
+	public Room FirstRoom
+	{
+		get { return SurvivingRooms.FirstOrDefault(x => x.LandingPadTile.IsValidCoordinate()); }
+	}
+
+	public Room LastRoom
+	{
+		get { return SurvivingRooms.LastOrDefault(x => x.LandingPadTile.IsValidCoordinate()); }
+	}
+
+	[Range(0, 100)]
     public int RandomMapFillPercentage;
     public int Height;
     public int Width;
@@ -35,7 +47,11 @@ public class MapGenerator : MonoBehaviour
 
     public void GenerateMap()
     {
-        _map = new int[Width, Height];
+        Map = new int[Width, Height];
+
+		if(SurvivingRooms != null)
+			SurvivingRooms.Clear();
+
         FillMap();
 
         for (int i = 0; i < 5; i++)
@@ -51,7 +67,7 @@ public class MapGenerator : MonoBehaviour
             {
                 if (x >= BorderSize && x < (Width + BorderSize) && y >= BorderSize && y < (Height + BorderSize))
                 {
-                    borderedMap[x, y] = _map[(x - BorderSize), (y - BorderSize)];
+                    borderedMap[x, y] = Map[(x - BorderSize), (y - BorderSize)];
                 }
                 else
                 {
@@ -60,9 +76,11 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        MeshGenerator meshGenerator = GetComponent<MeshGenerator>();
+        var meshGenerator = GetComponent<MeshGenerator>();
         meshGenerator.GenerateMesh(borderedMap, 1);
-    }
+
+		DetermineSurvivingRoomsLandingPads(meshGenerator);
+	}
 
     public void FillMap()
     {
@@ -75,10 +93,9 @@ public class MapGenerator : MonoBehaviour
         {
             for (int y = 0; y < Height; y++)
             {
-                _map[x, y] = (pseudoRandomNumberGenerator.Next(0, 100) < RandomMapFillPercentage || (x == 0 || x == (Width - 1) || y == 0 || y == (Height - 1))) ? (int)MapFillValues.FillSpace : (int)MapFillValues.EmptySpace;
+                Map[x, y] = (pseudoRandomNumberGenerator.Next(0, 100) < RandomMapFillPercentage || (x == 0 || x == (Width - 1) || y == 0 || y == (Height - 1))) ? (int)MapFillValues.FillSpace : (int)MapFillValues.EmptySpace;
             }
         }
-
     }
 
     public void SmoothMap()
@@ -90,9 +107,9 @@ public class MapGenerator : MonoBehaviour
                 var neighbouringFilledSpaces = GetSurroundingWallCount(x, y);
 
                 if (neighbouringFilledSpaces > 4)
-                    _map[x, y] = (int)MapFillValues.FillSpace;
+                    Map[x, y] = (int)MapFillValues.FillSpace;
                 else if (neighbouringFilledSpaces < 4)
-                    _map[x, y] = (int)MapFillValues.EmptySpace;
+                    Map[x, y] = (int)MapFillValues.EmptySpace;
             }
         }
     }
@@ -108,7 +125,7 @@ public class MapGenerator : MonoBehaviour
                 if (IsInMapRange(neighbourX, neighbourY))
                 {
                     if (neighbourX != xValue || neighbourY != yValue)
-                        wallCount += _map[neighbourX, neighbourY];
+                        wallCount += Map[neighbourX, neighbourY];
                 }
                 else
                     wallCount++;
@@ -128,12 +145,13 @@ public class MapGenerator : MonoBehaviour
             {
                 foreach (var tile in region)
                 {
-                    _map[tile.TileX, tile.TileY] = (int)MapFillValues.EmptySpace;
+                    Map[tile.TileX, tile.TileY] = (int)MapFillValues.EmptySpace;
                 }
             }
         }
 
         var roomRegions = GetRegions((int)MapFillValues.EmptySpace);
+		SurvivingRooms = new List<Room>();
 
         foreach (var roomRegion in roomRegions)
         {
@@ -141,34 +159,84 @@ public class MapGenerator : MonoBehaviour
             {
                 foreach (var roomtile in roomRegion)
                 {
-                    _map[roomtile.TileX, roomtile.TileY] = (int)MapFillValues.FillSpace;
+                    Map[roomtile.TileX, roomtile.TileY] = (int)MapFillValues.FillSpace;
                 }
             }
+			else
+			{
+				SurvivingRooms.Add(new Room(roomRegion, Map));
+			}
         }
+
+		ConnectClosestRooms();
     }
 
-    public void OnDrawGizmos()
-    {
-        if (_map != null)
-        {
-            //for (int x = 0; x < Width; x++)
-            //{
-            //	for (int y = 0; y < Height; y++)
-            //	{
-            //		Gizmos.color = _map[x, y] == (int)MapFillValues.FillSpace ? Color.black : Color.white;
+	public void ConnectClosestRooms()
+	{
+		var bestDistance = 0;
+		var bestTileA = new Coordinate();
+		var bestTileB = new Coordinate();
+		var bestRoomA = new Room();
+		var bestRoomB = new Room();
+		var possibleConnectionFound = false;
 
-            //		var position = new Vector3(-Width / 2 + x + 0.5f, 0, -Height / 2 + y + 0.5f);
-            //		Gizmos.DrawCube (position, Vector3.one);
-            //	}
-            //}
-        }
-    }
+		foreach(var roomA in SurvivingRooms)
+		{
+			possibleConnectionFound = false;
 
-    List<Coordinate> GetRegionTiles(int startX, int startY)
+			foreach(var roomB in SurvivingRooms)
+			{
+				if (roomA == roomB)
+					continue;
+
+				if (roomA.IsConnected(roomB))
+				{
+					possibleConnectionFound = false;
+					break;
+				}
+
+				for(int tileIndexA = 0; tileIndexA < roomA.EdgeTiles.Count; tileIndexA++)
+				{
+					for(int tileIndexB = 0; tileIndexB < roomB.EdgeTiles.Count; tileIndexB++)
+					{
+						var tileA = roomA.EdgeTiles[tileIndexA];
+						var tileB = roomB.EdgeTiles[tileIndexB];
+						var distanceBetweenRooms = (int)(Mathf.Pow((tileA.TileX - tileB.TileX), 2) + Mathf.Pow((tileA.TileY - tileB.TileY), 2));
+
+						if(distanceBetweenRooms < bestDistance || !possibleConnectionFound)
+						{
+							bestDistance = distanceBetweenRooms;
+							possibleConnectionFound = true;
+							bestTileA = tileA;
+							bestTileB = tileB;
+							bestRoomA = roomA;
+							bestRoomB = roomB;
+						}
+					}
+				}
+			}
+
+			if (possibleConnectionFound)
+				CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
+		}
+	}
+
+	public void CreatePassage(Room roomA, Room roomB, Coordinate tileA, Coordinate tileB)
+	{
+		Room.ConnectRooms(roomA, roomB);
+		Debug.DrawLine(CoordinateToWorldPoint(tileA), CoordinateToWorldPoint(tileB), Color.green, 100);
+	}
+
+	public Vector3 CoordinateToWorldPoint(Coordinate tile)
+	{
+		return new Vector3(-Width / 2 + 0.5f + tile.TileX, -Height / 2 + 0.5f + tile.TileY, 2);
+	}
+
+    public List<Coordinate> GetRegionTiles(int startX, int startY)
     {
         var tiles = new List<Coordinate>();
         var mapFlags = new bool[Width, Height];
-        var tileType = _map[startX, startY];
+        var tileType = Map[startX, startY];
 
         var queue = new Queue<Coordinate>();
         queue.Enqueue(new Coordinate(startX, startY));
@@ -185,7 +253,7 @@ public class MapGenerator : MonoBehaviour
                 for (int y = (tile.TileY - 1); y <= (tile.TileY + 1); y++)
                 {
                     //If tile is in region and is not on a diagonal and it isn't been checked and is of the right type
-                    if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX) && !mapFlags[x, y] && _map[x, y] == tileType)
+                    if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX) && !mapFlags[x, y] && Map[x, y] == tileType)
                     {
                         mapFlags[x, y] = true;
                         queue.Enqueue(new Coordinate(x, y));
@@ -206,7 +274,7 @@ public class MapGenerator : MonoBehaviour
         {
             for (int y = 0; y < Height; y++)
             {
-                if (!mapFlags[x, y] && _map[x, y] == tileType)
+                if (!mapFlags[x, y] && Map[x, y] == tileType)
                 {
                     var newRegion = GetRegionTiles(x, y);
                     regions.Add(newRegion);
@@ -220,10 +288,26 @@ public class MapGenerator : MonoBehaviour
         return regions;
     }
 
-    bool IsInMapRange(int x, int y)
+    public bool IsInMapRange(int x, int y)
     {
         return x >= 0 && x < Width && y >= 0 && y < Height;
     }
+
+	public void DetermineSurvivingRoomsLandingPads(MeshGenerator meshGenerator)
+	{
+		foreach (var room in SurvivingRooms)
+		{
+			foreach (var tile in room.EdgeTiles)
+			{
+				if (meshGenerator.IsLandingPadSquare(tile.TileX, tile.TileY))
+				{
+					room.LandingPadTile.TileX = tile.TileX;
+					room.LandingPadTile.TileY = tile.TileY;
+					break;
+				}
+			}
+		}
+	}
 }
 
 public struct Coordinate
@@ -236,4 +320,57 @@ public struct Coordinate
         this.TileX = tileX;
         this.TileY = tileY;
     }
+
+	public bool IsValidCoordinate()
+	{
+		return TileX > 0 && TileY > 0;
+	}
+}
+
+public class Room
+{
+	public List<Coordinate> Tiles;
+	public List<Coordinate> EdgeTiles;
+	public List<Room> NeighbouringRooms;
+	public Coordinate LandingPadTile;
+	public int RoomSize;
+
+	public Room()
+	{
+		LandingPadTile = new Coordinate(-1, -1);
+	}
+
+	public Room(List<Coordinate> roomTiles, int[,] map)
+	{
+		Tiles = roomTiles;
+		RoomSize = Tiles.Count;
+		NeighbouringRooms = new List<Room>();
+		EdgeTiles = new List<Coordinate>();
+		LandingPadTile = new Coordinate(-1, -1);
+		
+		foreach(var tile in Tiles)
+		{
+			for(int x = (tile.TileX - 1); x <= (tile.TileX + 1); x++)
+			{
+				for(int y = (tile.TileY - 1); y <= (tile.TileY + 1); y++)
+				{
+					if((x == tile.TileX || y == tile.TileY) && map[x, y] == (int)MapFillValues.FillSpace)
+					{
+						EdgeTiles.Add(tile);
+					}
+				}
+			}
+		}
+	}
+
+	public static void ConnectRooms(Room roomA, Room roomB)
+	{
+		roomA.NeighbouringRooms.Add(roomB);
+		roomB.NeighbouringRooms.Add(roomA);
+	}
+
+	public bool IsConnected(Room otherRoom)
+	{
+		return NeighbouringRooms.Contains(otherRoom);
+	}
 }

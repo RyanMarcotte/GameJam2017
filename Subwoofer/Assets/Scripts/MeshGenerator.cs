@@ -70,8 +70,8 @@ public class MeshGenerator : MonoBehaviour
                 var startIndex = wallVertices.Count;
                 wallVertices.Add(Vertices[outline[i]]); //Left Vertex
                 wallVertices.Add(Vertices[outline[i + 1]]); //Right Vertex
-                wallVertices.Add(Vertices[outline[i]] - Vector3.up * wallHeight); //Bottom Left Vertex
-                wallVertices.Add(Vertices[outline[i + 1]] - Vector3.up * wallHeight); //Bottom Right Vertex
+                wallVertices.Add(Vertices[outline[i]] - Vector3.forward * wallHeight); //Bottom Left Vertex
+                wallVertices.Add(Vertices[outline[i + 1]] - Vector3.forward * wallHeight); //Bottom Right Vertex
 
                 //Create triangle going counter-clockwise
                 wallTriangles.Add(startIndex + 0);
@@ -194,6 +194,14 @@ public class MeshGenerator : MonoBehaviour
                 break;
         }
     }
+
+	public bool IsLandingPadSquare(int xCoordinate, int yCoordinate)
+	{
+		var square = SquareGridMap.Squares[xCoordinate, yCoordinate];
+
+		return square.Configuration == 3;
+
+	}
 
     private void CreateMeshFromPoints(params Node[] points)
     {
@@ -434,7 +442,7 @@ public class SquareGrid
         {
             for (int y = 0; y < nodeCountY; y++)
             {
-                var position = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, 0, -mapHeight / 2 + y * squareSize + squareSize / 2);
+                var position = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
                 controlNodes[x, y] = new ControlNode(position, (map[x, y] == 1), squareSize);
             }
         }
