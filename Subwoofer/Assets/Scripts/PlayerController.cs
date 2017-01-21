@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
 {
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
+	private const int MAXIMUM_FUEL = 50000;
 
 	//Use of rigid body allows the physics engine to apply
 	private Rigidbody _rigidBody;
@@ -42,7 +43,7 @@ public class PlayerController : MonoBehaviour
     void Start ()
     {
 		ThrustersEngaged = false;
-	    RemainingFuel = MaximumFuel = 50000;
+	    RemainingFuel = MaximumFuel = (int)MAXIMUM_FUEL;
         UpdateFuel();
 
         // obtain a reference to the rigid body
@@ -76,20 +77,20 @@ public class PlayerController : MonoBehaviour
 		_spaceshipSpriteRenderer.transform.Rotate(Vector3.forward, -ShipRotation);
 
 		// show or hide thruster sprites based on input
-		var thrustersThatAreOn = new HashSet<string>();
+		var thrustersThatAreOn = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		if (inputY > 0)
-			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("mainthruster")).Select(x => x.name.ToLower()));
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("mainthruster")).Select(x => x.name));
 		if (inputY < 0)
-			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("backthruster")).Select(x => x.name.ToLower()));
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("backthruster")).Select(x => x.name));
 		if (inputX > 0)
-			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotatecw")).Select(x => x.name.ToLower()));
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotatecw")).Select(x => x.name));
 		if (inputX < 0)
-			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotateccw")).Select(x => x.name.ToLower()));
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotateccw")).Select(x => x.name));
 
 		var hidden = new Color(1, 1, 1, 0);
 		var shown = new Color(1, 1, 1, 1);
 		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
-			spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name.ToLower()) ? shown : hidden;
+			spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name) ? shown : hidden;
 
 		_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 	}
