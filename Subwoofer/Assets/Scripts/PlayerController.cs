@@ -9,7 +9,11 @@ public class PlayerController : MonoBehaviour
 {
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
+	private const int MAXIMUM_HEALTH = 1000;
 	private const int MAXIMUM_FUEL = 50000;
+
+	private const string HEALTH_REMAINING_TEXT_FORMAT = "HEALTH : {0}";
+	private const string FUEL_REMAINING_TEXT_FORMAT = "FUEL   : {0}";
 
 	//Use of rigid body allows the physics engine to apply
 	private Rigidbody _rigidBody;
@@ -17,12 +21,25 @@ public class PlayerController : MonoBehaviour
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
 	private AudioSource _spaceshipThrusterAudioSource;
 
-    public Text fuelRemainingText;
+	public Text HealthRemainingText;
+	public Text HealthRemainingBackendText;
+    public Text FuelRemainingText;
+	public Text FuelRemainingBackendText;
 
 	/// <summary>
 	/// Gets the ship's rotation.
 	/// </summary>
 	public float ShipRotation { get; private set; }
+
+	/// <summary>
+	/// Gets the amount of remaining health.
+	/// </summary>
+	public int RemainingHealth { get; private set; }
+
+	/// <summary>
+	/// Gets the maximum health capacity.
+	/// </summary>
+	public int MaximumHealth { get { return MAXIMUM_HEALTH; } }
 
 	/// <summary>
 	/// Indicates if the thrusters are currently engaged.
@@ -37,13 +54,14 @@ public class PlayerController : MonoBehaviour
 	/// <summary>
 	/// Gets the maximum fuel capacity.
 	/// </summary>
-	public int MaximumFuel { get; private set; }
+	public int MaximumFuel { get { return MAXIMUM_FUEL; } }
 
     //The start function runs once at the beginning of the game
     void Start ()
     {
 		ThrustersEngaged = false;
-	    RemainingFuel = MaximumFuel = (int)MAXIMUM_FUEL;
+	    RemainingHealth = MaximumHealth;
+	    RemainingFuel = MaximumFuel;
         UpdateFuel();
 
         // obtain a reference to the rigid body
@@ -95,29 +113,36 @@ public class PlayerController : MonoBehaviour
 		_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 	}
 
+	void UpdateHealth()
+	{
+		const int SCALE = 2;
+		int healthRemainingPercentage = GetPercentage(RemainingHealth, MaximumHealth);
+		HealthRemainingText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string('|', healthRemainingPercentage / SCALE));
+		HealthRemainingBackendText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string('|', 100 / SCALE));
+	}
+
     /// <summary>
     /// Create a graphical representation of the fuel to the user.
     /// </summary>
     void UpdateFuel()
     {
-        //Obtain fuel percentage
-        int fuelRemainingPercentage = (int)((RemainingFuel * 100.0) / MaximumFuel);
+		const int SCALE = 2;
+		int fuelRemainingPercentage = GetPercentage(RemainingFuel, MaximumFuel);
+		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string('|', fuelRemainingPercentage / SCALE));
+		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string('|', 100 / SCALE));
 
-        //Set the fuel UI color
-        if (fuelRemainingPercentage > 66)
-            fuelRemainingText.color = Color.green;
+		if (fuelRemainingPercentage > 66)
+			FuelRemainingText.color = Color.green;
         else if (fuelRemainingPercentage > 33)
-            fuelRemainingText.color = Color.yellow;
+			FuelRemainingText.color = Color.yellow;
         else
-            fuelRemainingText.color = Color.red;
-
-        //Fill the fuel bar
-        fuelRemainingText.text = "Fuel Remaining: ";
-        for (; fuelRemainingPercentage > 0; fuelRemainingPercentage -= 2)
-        {
-            fuelRemainingText.text += "|";
-        }
+			FuelRemainingText.color = Color.red;
     }
+
+	private static int GetPercentage(int currentValue, int maximumValue)
+	{
+		return (int)((currentValue * 100.0)/ maximumValue);
+	}
 }
 
 public static class HashSetExtensions
