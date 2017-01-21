@@ -32,6 +32,8 @@ public class PlayerController : MonoBehaviour
 	private AudioSource _spaceshipThrusterAudioSource;
 	private IEnumerable<AudioSource> _spaceshipWallCollisionAudioSourceCollection;
 	private AudioSource _spaceshipExplosionAudioSource;
+	private AudioSource _healthPickupAudioSource;
+	private AudioSource _fuelPickupAudioSource;
 	private AutomaticRotation _deathRotation = AutomaticRotation.None;
 
     //UI Text
@@ -59,12 +61,14 @@ public class PlayerController : MonoBehaviour
 		private set { _shipRotation = value; }
 	}
 
+	private int _remainingHealth;
+	private int _remainingFuel;
 	private float _shipRotation;
 
 	/// <summary>
 	/// Gets the amount of remaining health.
 	/// </summary>
-	public int RemainingHealth { get; private set; }
+	public int RemainingHealth { get { return _remainingHealth > 0 ? _remainingHealth : 0; } private set { _remainingHealth = value; } }
 
 	/// <summary>
 	/// Gets the maximum health capacity.
@@ -79,7 +83,7 @@ public class PlayerController : MonoBehaviour
 	/// <summary>
 	/// Gets the amount of remaining fuel.
 	/// </summary>
-	public int RemainingFuel { get; private set; }
+	public int RemainingFuel { get { return _remainingFuel > 0 ? _remainingFuel : 0; } private set { _remainingFuel = value; } }
 
 	/// <summary>
 	/// Gets the maximum fuel capacity.
@@ -103,11 +107,27 @@ public class PlayerController : MonoBehaviour
 	    _spaceshipThrusterAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipThrusterLoop") == 0);
 	    _spaceshipWallCollisionAudioSourceCollection = allAudioSources.Where(x => x.clip.name.ToLower().Contains("hitwall"));
 		_spaceshipExplosionAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipExplosion") == 0);
-	}
+		_healthPickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectHealth") == 0);
+		_fuelPickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectFuel") == 0);
+    }
 	
 	//The update function runs each frame
 	void FixedUpdate ()
 	{
+		UpdateUI();
+
+		// do not move player (and hide them) if they have no health
+		if (RemainingHealth <= 0)
+		{
+			_rigidBody.velocity = Vector3.zero;
+			_spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
+			foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
+				spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
+
+			_spaceshipThrusterAudioSource.mute = true;
+			return;
+		}
+
 		// obtain the movements
 		// (if there is no fuel, disable thrusters)
 		float inputX = RemainingFuel > 0 ? Input.GetAxis("Horizontal") : 0;
@@ -164,7 +184,7 @@ public class PlayerController : MonoBehaviour
 
 		// show or hide thruster sprites based on input
 		var thrustersThatAreOn = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		if (RemainingFuel > 0)
+		if (RemainingHealth > 0 && RemainingFuel > 0)
 		{
 			if (inputY > 0)
 				thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("mainthruster")).Select(x => x.name));
@@ -176,14 +196,12 @@ public class PlayerController : MonoBehaviour
 				thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotateccw")).Select(x => x.name));
 		}
 
-		UpdateUI();
-
 		var hidden = new Color(1, 1, 1, 0);
 		var shown = new Color(1, 1, 1, 1);
 		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
 			spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name) ? shown : hidden;
 
-		if (RemainingFuel > 0)
+		if (RemainingHealth > 0 && RemainingFuel > 0)
 			_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 		else
 			_spaceshipThrusterAudioSource.mute = true;
@@ -195,10 +213,10 @@ public class PlayerController : MonoBehaviour
     void OnCollisionEnter(Collision other)
     {
         //If the ship is out of fuel, end the game
-        if(RemainingFuel <= 0)
+        if (RemainingFuel <= 0)
         {
+	        RemainingHealth = 0;
             _spaceshipExplosionAudioSource.Play();
-            _spaceshipSpriteRenderer.color = new Color(_spaceshipSpriteRenderer.color.r, _spaceshipSpriteRenderer.color.g, _spaceshipSpriteRenderer.color.b, 0);
             GameOverText.text = "GAME OVER";
             return;
         }
@@ -218,9 +236,17 @@ public class PlayerController : MonoBehaviour
 		// (no bounce if player is oriented straight up, is landing on a flat surface, and is at low speed)
 		const float VERTICAL_LIMIT = 12.5f;
 	    if (incidentVectorAngle > 30 || (ShipRotation < -VERTICAL_LIMIT || ShipRotation > VERTICAL_LIMIT) || other.relativeVelocity.magnitude > 3.5f)
-		    _rigidBody.AddForce(incidentVector*50*Math.Max(other.relativeVelocity.magnitude, 3));
+	    {
+		    float magnitude = 50*Math.Max(other.relativeVelocity.magnitude, 3);
+			_rigidBody.AddForce(incidentVector * magnitude);
+		    RemainingHealth -= (int)magnitude;
+		    if (RemainingHealth <= 0)
+				_spaceshipExplosionAudioSource.Play();
+	    }
 	    else
-		    ShipRotation = 0;
+	    {
+			ShipRotation = 0;
+		}
     }
 
     /// <summary>
@@ -230,7 +256,8 @@ public class PlayerController : MonoBehaviour
     {
         //Fuel
         if (pickup.tag == "Fuel")
-            RemainingFuel = MaximumFuel;
+	        _fuelPickupAudioSource.PlayOneShot(_fuelPickupAudioSource.clip, 1);
+			RemainingFuel = MaximumFuel;
         else
             RemainingHealth = (RemainingHealth > MaximumHealth * 2 / 3 ? MaximumHealth : RemainingHealth + MaximumHealth / 3);
 
@@ -267,11 +294,16 @@ public class PlayerController : MonoBehaviour
 	}
 }
 
-public static class HashSetExtensions
+public static class ExtensionMethods
 {
 	public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> range)
 	{
 		foreach (var item in range)
 			collection.Add(item);
+	}
+
+	public static Color ToNotVisible(this Color color)
+	{
+		return new Color(color.r, color.g, color.b, 0);
 	}
 }
