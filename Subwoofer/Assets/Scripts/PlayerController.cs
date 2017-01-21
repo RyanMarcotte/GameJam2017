@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -11,7 +12,8 @@ public class PlayerController : MonoBehaviour
 	//Use of rigid body allows the physics engine to apply
 	private Rigidbody2D _rigidBody;
 	private SpriteRenderer _spaceshipSpriteRenderer;
-	
+	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
+
 	/// <summary>
 	/// Gets the ship's rotation.
 	/// </summary>
@@ -41,7 +43,8 @@ public class PlayerController : MonoBehaviour
 		// obtain a reference to the rigid body
 		_rigidBody = GetComponent<Rigidbody2D>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
-    }
+		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
+	}
 	
 	//The update function runs each frame
 	void FixedUpdate ()
@@ -64,5 +67,9 @@ public class PlayerController : MonoBehaviour
 		// rotate the sprite to match the internal rotation value
 		_spaceshipSpriteRenderer.transform.localRotation = new Quaternion();
 		_spaceshipSpriteRenderer.transform.Rotate(Vector3.forward, -ShipRotation);
-    }
+
+		var color = new Color(1, 1, 1, ThrustersEngaged ? 1 : 0);
+		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
+			spriteRenderer.color = color;
+	}
 }
