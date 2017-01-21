@@ -118,10 +118,9 @@ public class PlayerController : MonoBehaviour
 		
 		if (hadFuel && RemainingFuel <= 0)
 		{
-			var constrainedRotation = ShipRotation % 360;
-			if ((constrainedRotation > 0 && constrainedRotation < 180) || (constrainedRotation > -360 && constrainedRotation < -180))
+			if (ShipRotation > 0 && ShipRotation < 180)
 				_deathRotation = AutomaticRotation.Right;
-			else if ((constrainedRotation > 180 && constrainedRotation < 360) || (constrainedRotation > -180 && constrainedRotation < 0))
+			else if (ShipRotation > -180 && ShipRotation < 0)
 				_deathRotation = AutomaticRotation.Left;
 			else
 				_deathRotation = _rng.Next(0, 100) > 50 ? AutomaticRotation.Right : AutomaticRotation.Left;
@@ -145,6 +144,11 @@ public class PlayerController : MonoBehaviour
 					throw new ArgumentOutOfRangeException();
 			}
 		}
+
+		// if ship is pointing straight up and not moving, then we are likely sitting on the ground...
+		// do not allow rotation
+		if (Math.Abs(ShipRotation) < float.Epsilon && ((int)_rigidBody.velocity.magnitude * 2) == 0)
+			inputX = 0;
 
 		// apply thrust and rotation
 		var movement = new Vector3(inputY*(float)Math.Sin(ShipRotation*(Math.PI/180.0f)), inputY*(float)Math.Cos(ShipRotation*(Math.PI/180.0f)), 0.0f);
@@ -203,9 +207,11 @@ public class PlayerController : MonoBehaviour
 
 		// bounce off the wall
 		// (no bounce if player is oriented straight up, is landing on a flat surface, and is at low speed)
-		const float VERTICAL_LIMIT = 10;
-		if (incidentVectorAngle > 30 || (ShipRotation < -VERTICAL_LIMIT || ShipRotation > VERTICAL_LIMIT) || other.relativeVelocity.magnitude > 3.5f)
-			_rigidBody.AddForce(incidentVector * 50 * Math.Max(other.relativeVelocity.magnitude, 3));
+		const float VERTICAL_LIMIT = 12.5f;
+	    if (incidentVectorAngle > 30 || (ShipRotation < -VERTICAL_LIMIT || ShipRotation > VERTICAL_LIMIT) || other.relativeVelocity.magnitude > 3.5f)
+		    _rigidBody.AddForce(incidentVector*50*Math.Max(other.relativeVelocity.magnitude, 3));
+	    else
+		    ShipRotation = 0;
     }
 
     void UpdateUI()
