@@ -120,6 +120,7 @@ public class PlayerController : MonoBehaviour
 		int healthRemainingPercentage = GetPercentage(RemainingHealth, MaximumHealth);
 		HealthRemainingText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, healthRemainingPercentage / UI_SCALE));
 		HealthRemainingBackendText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100 / UI_SCALE));
+		HealthRemainingText.color = GetPercentageColor(healthRemainingPercentage);
 	}
 
     /// <summary>
@@ -130,18 +131,20 @@ public class PlayerController : MonoBehaviour
 		int fuelRemainingPercentage = GetPercentage(RemainingFuel, MaximumFuel);
 		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, fuelRemainingPercentage / UI_SCALE));
 		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100 / UI_SCALE));
-
-		if (fuelRemainingPercentage > 66)
-			FuelRemainingText.color = Color.green;
-        else if (fuelRemainingPercentage > 33)
-			FuelRemainingText.color = Color.yellow;
-        else
-			FuelRemainingText.color = Color.red;
+		FuelRemainingText.color = GetPercentageColor(fuelRemainingPercentage);
     }
 
 	private static int GetPercentage(int currentValue, int maximumValue)
 	{
 		return (int)((currentValue * 100.0)/ maximumValue);
+	}
+
+	private static Color GetPercentageColor(float percentage)
+	{
+		if (percentage > 66.6f)
+			return Color.green;
+		
+		return percentage > 33.3f ? Color.yellow : Color.red;
 	}
 }
 
