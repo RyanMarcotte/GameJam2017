@@ -29,6 +29,8 @@ public class PlayerController : MonoBehaviour
 	private SpriteRenderer _spaceshipSpriteRenderer;
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
 	private AudioSource _spaceshipThrusterAudioSource;
+	private IEnumerable<AudioSource> _spaceshipWallCollisionAudioSourceCollection;
+	private AudioSource _spaceshipExplosionAudioSource;
 	private AutomaticRotation _deathRotation = AutomaticRotation.None;
 
 	public Text HealthRemainingText;
@@ -78,8 +80,12 @@ public class PlayerController : MonoBehaviour
 		_rigidBody = GetComponent<Rigidbody>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
-	    _spaceshipThrusterAudioSource = GetComponentInChildren<AudioSource>();
-    }
+	    
+		var allAudioSources = GetComponentsInChildren<AudioSource>();
+	    _spaceshipThrusterAudioSource = allAudioSources.FirstOrDefault(x => string.Compare(x.name, "thruster", StringComparison.OrdinalIgnoreCase) == 0);
+	    _spaceshipWallCollisionAudioSourceCollection = allAudioSources.Where(x => string.Compare(x.name, "hitWall", StringComparison.OrdinalIgnoreCase) == 0);
+		_spaceshipExplosionAudioSource = allAudioSources.FirstOrDefault(x => string.Compare(x.name, "explosion", StringComparison.OrdinalIgnoreCase) == 0);
+	}
 	
 	//The update function runs each frame
 	void FixedUpdate ()
