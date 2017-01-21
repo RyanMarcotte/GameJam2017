@@ -161,7 +161,15 @@ public class PlayerController : MonoBehaviour
 			_spaceshipThrusterAudioSource.mute = true;
 	}
 
-	void UpdateUI()
+    /// <summary>
+    /// Handle collisions
+    /// </summary>
+    void OnCollisionEnter(Collision other)
+    {
+        Debug.Log("collided");
+    }
+
+    void UpdateUI()
 	{
 		int healthRemainingPercentage = GetPercentage(RemainingHealth, MaximumHealth);
 		HealthRemainingText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, healthRemainingPercentage/UI_SCALE));
