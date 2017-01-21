@@ -70,8 +70,8 @@ public class MeshGenerator : MonoBehaviour
                 var startIndex = wallVertices.Count;
                 wallVertices.Add(Vertices[outline[i]]); //Left Vertex
                 wallVertices.Add(Vertices[outline[i + 1]]); //Right Vertex
-                wallVertices.Add(Vertices[outline[i]] - Vector3.forward * wallHeight); //Bottom Left Vertex
-                wallVertices.Add(Vertices[outline[i + 1]] - Vector3.forward * wallHeight); //Bottom Right Vertex
+                wallVertices.Add(Vertices[outline[i]] - Vector3.back * wallHeight); //Bottom Left Vertex
+                wallVertices.Add(Vertices[outline[i + 1]] - Vector3.back * wallHeight); //Bottom Right Vertex
 
                 //Create triangle going counter-clockwise
                 wallTriangles.Add(startIndex + 0);
@@ -375,7 +375,7 @@ public class ControlNode : Node
     public ControlNode(Vector3 position, bool active, float squareSize) : base(position)
     {
         this.IsActive = active;
-        this.UpperNode = new Node(Position + Vector3.forward * squareSize / 2f);
+        this.UpperNode = new Node(Position + Vector3.up * squareSize / 2f);
         this.RightNode = new Node(Position + Vector3.right * squareSize / 2f);
     }
 }

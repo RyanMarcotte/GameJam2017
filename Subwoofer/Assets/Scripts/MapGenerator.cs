@@ -14,6 +14,7 @@ public class MapGenerator : MonoBehaviour
 {
     public int[,] Map;
 	public List<Room> SurvivingRooms;
+	public GameObject Player;
 
 	private Room _firstRoom;
 
@@ -83,6 +84,11 @@ public class MapGenerator : MonoBehaviour
         meshGenerator.GenerateMesh(borderedMap, 1);
 
 		DetermineSurvivingRoomsLandingPads(meshGenerator);
+		if(_firstRoom != null)
+		{
+			var startingPosition = CoordinateToWorldPoint(_firstRoom.LandingPadTile);
+			//Player.gameObject.positiong
+		}
 	}
 
     public void FillMap()
@@ -345,7 +351,7 @@ public class MapGenerator : MonoBehaviour
 
 	public Vector3 CoordinateToWorldPoint(Coordinate tile)
 	{
-		return new Vector3(-Width / 2 + 0.5f + tile.TileX, -Height / 2 + 0.5f + tile.TileY, 2);
+		return new Vector3(-Width / 2 + 0.5f + tile.TileX, -Height / 2 + 0.5f + tile.TileY, 0);
 	}
 
     public List<Coordinate> GetRegionTiles(int startX, int startY)
