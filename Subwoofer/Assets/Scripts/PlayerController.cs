@@ -11,8 +11,12 @@ public class PlayerController : MonoBehaviour
 	//Use of rigid body allows the physics engine to apply
 	private Rigidbody2D _rigidBody;
 	private SpriteRenderer _spaceshipSpriteRenderer;
-	private float _rotation;
 	
+	/// <summary>
+	/// Gets the ship's rotation.
+	/// </summary>
+	public float ShipRotation { get; private set; }
+
 	/// <summary>
 	/// Indicates if the thrusters are currently engaged.
 	/// </summary>
@@ -32,7 +36,7 @@ public class PlayerController : MonoBehaviour
     void Start ()
     {
 		ThrustersEngaged = false;
-	    RemainingFuel = MaximumFuel = 1000;
+	    RemainingFuel = MaximumFuel = 50000;
 
 		// obtain a reference to the rigid body
 		_rigidBody = GetComponent<Rigidbody2D>();
@@ -53,12 +57,12 @@ public class PlayerController : MonoBehaviour
 
 		// apply thrust and rotation
 		
-		var movement = new Vector2(inputY * (float)Math.Sin(_rotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(_rotation * (Math.PI / 180.0f)));
+		var movement = new Vector2(inputY * (float)Math.Sin(ShipRotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(ShipRotation * (Math.PI / 180.0f)));
 		_rigidBody.AddForce(movement * THRUST_SPEED);
-		_rotation += inputX * ROTATION_SPEED;
+		ShipRotation += inputX * ROTATION_SPEED;
 
 		// rotate the sprite to match the internal rotation value
 		_spaceshipSpriteRenderer.transform.localRotation = new Quaternion();
-		_spaceshipSpriteRenderer.transform.Rotate(Vector3.forward, -_rotation);
+		_spaceshipSpriteRenderer.transform.Rotate(Vector3.forward, -ShipRotation);
     }
 }
