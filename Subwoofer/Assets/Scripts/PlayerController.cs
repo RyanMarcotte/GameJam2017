@@ -42,7 +42,22 @@ public class PlayerController : MonoBehaviour
 	/// <summary>
 	/// Gets the ship's rotation.
 	/// </summary>
-	public float ShipRotation { get; private set; }
+	public float ShipRotation
+	{
+		get
+		{
+			var normalizedRotation = _shipRotation % 360;
+			if (normalizedRotation > 180)
+				normalizedRotation -= 360;
+			else if (normalizedRotation < -180)
+				normalizedRotation += 360;
+
+			return normalizedRotation;
+		}
+		private set { _shipRotation = value; }
+	}
+
+	private float _shipRotation;
 
 	/// <summary>
 	/// Gets the amount of remaining health.
@@ -177,6 +192,20 @@ public class PlayerController : MonoBehaviour
 		
 		// play random collision sound effect
 	    _spaceshipWallCollisionAudioSourceCollection.ElementAt(_rng.Next(0, _spaceshipWallCollisionAudioSourceCollection.Count())).Play();
+
+		// compute the incident vector and its angle
+	    var allContactNormals = other.contacts.Select(x => x.normal).ToArray();
+	    var allXForContactNormals = allContactNormals.Sum(v => v.x);
+	    var allYForContactNormals = allContactNormals.Sum(v => v.y);
+	    var allZForContactNormals = allContactNormals.Sum(v => v.z);
+	    var incidentVector = new Vector3(allXForContactNormals, allYForContactNormals, allZForContactNormals).normalized;
+	    var incidentVectorAngle = Vector3.Angle(Vector3.up, incidentVector);
+
+		// bounce off the wall
+		// (no bounce if player is oriented straight up, is landing on a flat surface, and is at low speed)
+		const float VERTICAL_LIMIT = 10;
+		if (incidentVectorAngle > 30 || (ShipRotation < -VERTICAL_LIMIT || ShipRotation > VERTICAL_LIMIT) || other.relativeVelocity.magnitude > 3.5f)
+			_rigidBody.AddForce(incidentVector * 50 * Math.Max(other.relativeVelocity.magnitude, 3));
     }
 
     void UpdateUI()
