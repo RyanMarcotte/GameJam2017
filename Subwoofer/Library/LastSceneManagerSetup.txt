@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Subwoofer.unity
+- path: Assets/Scenes/Subwoofer.unity
   isLoaded: 1
   isActive: 1
