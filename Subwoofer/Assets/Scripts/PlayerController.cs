@@ -7,7 +7,8 @@ using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-	private const float THRUST_SPEED = 2.5f;
+	private const float THRUST_SPEED = 30.5f;
+	private const float MAXIMUM_VELOCITY = 3.0f;
 	private const float ROTATION_SPEED = 5f;
 
 	//Use of rigid body allows the physics engine to apply
@@ -43,7 +44,7 @@ public class PlayerController : MonoBehaviour
     {
 		ThrustersEngaged = false;
 	    RemainingFuel = MaximumFuel = 50000;
-        updateFuel();
+        UpdateFuel();
 
         // obtain a reference to the rigid body
         _rigidBody = GetComponent<Rigidbody>();
@@ -63,12 +64,14 @@ public class PlayerController : MonoBehaviour
 		// burn fuel (burn more fuel when thrusters are engaged)
 		ThrustersEngaged = (Math.Abs(inputY) > float.Epsilon);
 		RemainingFuel -= ThrustersEngaged ? 5 : 1;
-        updateFuel();
+        UpdateFuel();
 
 		// apply thrust and rotation
 		
 		var movement = new Vector3(inputY * (float)Math.Sin(ShipRotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(ShipRotation * (Math.PI / 180.0f)), 0.0f);
 		_rigidBody.AddForce(movement * THRUST_SPEED);
+		_rigidBody.AddForce(Physics.gravity * 0.25f);
+		_rigidBody.velocity = Vector3.ClampMagnitude(_rigidBody.velocity, MAXIMUM_VELOCITY);
 		ShipRotation += inputX * ROTATION_SPEED;
 
 		// rotate the sprite to match the internal rotation value
@@ -85,8 +88,8 @@ public class PlayerController : MonoBehaviour
 	}
 
     //Display the 
-    void updateFuel()
+    void UpdateFuel()
     {
-        fuelRemainingText.text = "Fuel Remaining: " + ((int)(RemainingFuel * 100.0 / MaximumFuel)).ToString() + "%";
+        fuelRemainingText.text = "Fuel Remaining: " + ((int)(RemainingFuel * 100.0 / MaximumFuel)) + "%";
     }
 }
