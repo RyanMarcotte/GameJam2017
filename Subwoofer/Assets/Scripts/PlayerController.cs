@@ -5,8 +5,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-
-	private const int THRUST_SPEED = 20;
+	private const int THRUST_SPEED = 15;
 	private const int ROTATION_SPEED = 500;
 
 	//Use of rigid body allows the physics engine to apply
@@ -34,7 +33,7 @@ public class PlayerController : MonoBehaviour
 			_rb.angularVelocity = 0.0f;
 		
         //Apply the movements
-		Vector2 movement = new Vector2(inputY * -(float)Math.Sin(_rb.rotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(_rb.rotation * (Math.PI / 180.0f)));
+		Vector2 movement = new Vector2(inputY * (float)Math.Sin(_rb.rotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(_rb.rotation * (Math.PI / 180.0f)));
 
 		_rb.AddForce(movement * THRUST_SPEED);
 		_rb.AddTorque(inputX * ROTATION_SPEED);
