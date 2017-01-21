@@ -15,7 +15,6 @@ public class PlayerController : MonoBehaviour
 	private Rigidbody _rigidBody;
 	private SpriteRenderer _spaceshipSpriteRenderer;
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
-	private IEnumerable<SpriteRenderer> _spaceshipBackThrusterSpriteRenderers;
 
     public Text fuelRemainingText;
 
@@ -49,8 +48,7 @@ public class PlayerController : MonoBehaviour
         // obtain a reference to the rigid body
         _rigidBody = GetComponent<Rigidbody>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
-		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("mainthruster"));
-	    _spaceshipBackThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("backthruster"));
+		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
     }
 	
 	//The update function runs each frame
@@ -78,18 +76,35 @@ public class PlayerController : MonoBehaviour
 		_spaceshipSpriteRenderer.transform.localRotation = new Quaternion();
 		_spaceshipSpriteRenderer.transform.Rotate(Vector3.forward, -ShipRotation);
 
-		// show or hide thruster sprites based
+		// show or hide thruster sprites based on input
+		var thrustersThatAreOn = new HashSet<string>();
+		if (inputY > 0)
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("mainthruster")).Select(x => x.name.ToLower()));
+		if (inputY < 0)
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("backthruster")).Select(x => x.name.ToLower()));
+		if (inputX > 0)
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotatecw")).Select(x => x.name.ToLower()));
+		if (inputX < 0)
+			thrustersThatAreOn.AddRange(_spaceshipThrusterSpriteRenderers.Where(x => x.name.ToLower().Contains("rotateccw")).Select(x => x.name.ToLower()));
+
 		var hidden = new Color(1, 1, 1, 0);
 		var shown = new Color(1, 1, 1, 1);
 		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
-			spriteRenderer.color = inputY > 0 ? shown : hidden;
-		foreach (var spriteRenderer in _spaceshipBackThrusterSpriteRenderers)
-			spriteRenderer.color = inputY < 0 ? shown : hidden;
+			spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name.ToLower()) ? shown : hidden;
 	}
 
-    //Display the 
-    void UpdateFuel()
+	//Display the 
+	void UpdateFuel()
     {
         fuelRemainingText.text = "Fuel Remaining: " + ((int)(RemainingFuel * 100.0 / MaximumFuel)) + "%";
     }
+}
+
+public static class HashSetExtensions
+{
+	public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> range)
+	{
+		foreach (var item in range)
+			collection.Add(item);
+	}
 }
