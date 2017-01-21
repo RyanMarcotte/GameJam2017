@@ -6,6 +6,10 @@ public class MeshGenerator : MonoBehaviour
 {
     public SquareGrid SquareGridMap;
     public MeshFilter Walls;
+    public MeshFilter Cave;
+
+    public bool IsIn2d;
+
     public List<Vector3> Vertices;
     public List<int> Triangles;
 
@@ -17,6 +21,7 @@ public class MeshGenerator : MonoBehaviour
     {
         Outlines.Clear();
         Vertices.Clear();
+        TriangleDictionary.Clear();
 
         this.SquareGridMap = new SquareGrid(map, squareSize);
 
@@ -32,13 +37,21 @@ public class MeshGenerator : MonoBehaviour
         }
 
         var mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        Cave.mesh = mesh;
 
         mesh.vertices = Vertices.ToArray();
         mesh.triangles = Triangles.ToArray();
         mesh.RecalculateNormals();
 
-        CreateWallMesh();
+        if (!IsIn2d)
+        {
+            CreateWallMesh();
+            Generate2DColliders();
+        }
+        else
+        {
+            Generate2DColliders();
+        }
     }
 
     private void CreateWallMesh()
@@ -75,6 +88,35 @@ public class MeshGenerator : MonoBehaviour
         wallMesh.vertices = wallVertices.ToArray();
         wallMesh.triangles = wallTriangles.ToArray();
         Walls.mesh = wallMesh;
+
+        var wallCollider = Walls.gameObject.AddComponent<MeshCollider>();
+        wallCollider.sharedMesh = wallMesh;
+    }
+
+    private void Generate2DColliders()
+    {
+        var currentColliders = gameObject.GetComponents<EdgeCollider2D>();
+
+        for (int i = 0; i < currentColliders.Length; i++)
+        {
+            Destroy(currentColliders[i]);
+        }
+
+        CalculateMeshOutlines();
+
+        foreach (var outline in Outlines)
+        {
+            var edgeCollider = gameObject.AddComponent<EdgeCollider2D>();
+            var edgePoints = new Vector2[outline.Count];
+
+            for (int i = 0; i < outline.Count; i++)
+            {
+                edgePoints[i] = new Vector2(Vertices[outline[i]].x, Vertices[outline[i]].z);
+            }
+
+            edgeCollider.points = edgePoints;
+        }
+
     }
 
     // Use this for initialization
