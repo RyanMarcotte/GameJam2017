@@ -57,8 +57,8 @@ public class PlayerController : MonoBehaviour
 	{
 		// obtain the movements
 		// (if there is no fuel, disable thrusters)
-        float inputX = Input.GetAxis("Horizontal");
-        float inputY = RemainingFuel > 0 ? (Input.GetAxis("Vertical") * 5000).ClampMagnitude(1) : 0;
+        float inputX = RemainingFuel > 0 ? Input.GetAxis("Horizontal") : 0;
+        float inputY = RemainingFuel > 0 ? Input.GetAxis("Vertical") : 0;
 
 		// burn fuel (burn more fuel when thrusters are engaged)
 		ThrustersEngaged = (Math.Abs(inputY) > float.Epsilon);
@@ -66,7 +66,6 @@ public class PlayerController : MonoBehaviour
         UpdateFuel();
 
 		// apply thrust and rotation
-		
 		var movement = new Vector3(inputY * (float)Math.Sin(ShipRotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(ShipRotation * (Math.PI / 180.0f)), 0.0f);
 		_rigidBody.AddForce(movement * THRUST_SPEED);
 		_rigidBody.AddForce(Physics.gravity);
@@ -122,16 +121,6 @@ public class PlayerController : MonoBehaviour
 
 public static class HashSetExtensions
 {
-	public static float ClampMagnitude(this float value, float clamp)
-	{
-		if (value > clamp)
-			return clamp;
-		if (value < -clamp)
-			return -clamp;
-
-		return 0;
-	}
-
 	public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> range)
 	{
 		foreach (var item in range)
