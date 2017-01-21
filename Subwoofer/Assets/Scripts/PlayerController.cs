@@ -188,7 +188,7 @@ public class PlayerController : MonoBehaviour
 	}
 
     /// <summary>
-    /// Handle collisions
+    /// Handle collisions with wall
     /// </summary>
     void OnCollisionEnter(Collision other)
     {
@@ -213,6 +213,22 @@ public class PlayerController : MonoBehaviour
 	    else
 		    ShipRotation = 0;
     }
+
+    /// <summary>
+    /// Handle collisions with pickups
+    /// </summary>
+    void OnTriggerEnter(Collider pickup)
+    {
+        //Fuel
+        if(pickup.tag == "Fuel")
+        {
+            Debug.Log("Fuel Picked Up");
+        }
+
+        //Health
+        pickup.gameObject.SetActive(false);
+    }
+
 
     void UpdateUI()
 	{
