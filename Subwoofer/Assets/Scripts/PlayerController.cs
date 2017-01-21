@@ -64,10 +64,10 @@ public class PlayerController : MonoBehaviour
 		ThrustersEngaged = false;
 	    RemainingHealth = MaximumHealth;
 	    RemainingFuel = MaximumFuel;
-        UpdateFuel();
+	    UpdateUI();
 
-        // obtain a reference to the rigid body
-        _rigidBody = GetComponent<Rigidbody>();
+		// obtain a reference to the rigid body
+		_rigidBody = GetComponent<Rigidbody>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
 	    _spaceshipThrusterAudioSource = GetComponentInChildren<AudioSource>();
@@ -84,7 +84,7 @@ public class PlayerController : MonoBehaviour
 		// burn fuel (burn more fuel when thrusters are engaged)
 		ThrustersEngaged = (Math.Abs(inputY) > float.Epsilon);
 		RemainingFuel -= ThrustersEngaged ? 5 : 1;
-        UpdateFuel();
+		UpdateUI();
 
 		// apply thrust and rotation
 		var movement = new Vector3(inputY * (float)Math.Sin(ShipRotation * (Math.PI / 180.0f)), inputY * (float)Math.Cos(ShipRotation * (Math.PI / 180.0f)), 0.0f);
@@ -115,24 +115,18 @@ public class PlayerController : MonoBehaviour
 		_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 	}
 
-	void UpdateHealth()
+	void UpdateUI()
 	{
 		int healthRemainingPercentage = GetPercentage(RemainingHealth, MaximumHealth);
 		HealthRemainingText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, healthRemainingPercentage / UI_SCALE));
 		HealthRemainingBackendText.text = string.Format(HEALTH_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100 / UI_SCALE));
 		HealthRemainingText.color = GetPercentageColor(healthRemainingPercentage);
-	}
 
-    /// <summary>
-    /// Create a graphical representation of the fuel to the user.
-    /// </summary>
-    void UpdateFuel()
-    {
 		int fuelRemainingPercentage = GetPercentage(RemainingFuel, MaximumFuel);
 		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, fuelRemainingPercentage / UI_SCALE));
 		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100 / UI_SCALE));
 		FuelRemainingText.color = GetPercentageColor(fuelRemainingPercentage);
-    }
+	}
 
 	private static int GetPercentage(int currentValue, int maximumValue)
 	{
