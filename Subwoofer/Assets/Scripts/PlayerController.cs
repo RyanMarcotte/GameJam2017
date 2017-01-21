@@ -84,8 +84,9 @@ public class PlayerController : MonoBehaviour
 			spriteRenderer.color = inputY < 0 ? shown : hidden;
 	}
 
+    //Display the 
     void updateFuel()
     {
-        fuelRemainingText.text = RemainingFuel.ToString();
+        fuelRemainingText.text = "Fuel Remaining: " + ((int)(RemainingFuel * 100.0 / MaximumFuel)).ToString() + "%";
     }
 }
