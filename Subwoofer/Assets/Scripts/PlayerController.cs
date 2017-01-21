@@ -94,7 +94,13 @@ public class PlayerController : MonoBehaviour
 	//Display the 
 	void UpdateFuel()
     {
-        fuelRemainingText.text = "Fuel Remaining: " + ((int)(RemainingFuel * 100.0 / MaximumFuel)) + "%";
+        int fuelRemainingPercentage = (int)((RemainingFuel * 100.0) / MaximumFuel);
+        fuelRemainingText.text = "Fuel Remaining: ";
+        while(fuelRemainingPercentage > 0)
+        {
+            fuelRemainingText.text += "|";
+            fuelRemainingPercentage -= 2;
+        }
     }
 }
 
