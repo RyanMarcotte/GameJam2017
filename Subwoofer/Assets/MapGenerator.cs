@@ -3,15 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum MapFillValues : int
+{
+	FillSpace = 1,
+	EmptySpace = 0
+}
+
 public class MapGenerator : MonoBehaviour 
 {
-	public enum MapFillValues : int
-	{
-		FillSpace = 1,
-		EmptySpace = 0
-	}
-
-
 	private int[,] _map;
 	private const int fillSpaceValue = 1;
 	private const int emptySpaceValue = 0;
@@ -40,6 +39,9 @@ public class MapGenerator : MonoBehaviour
 
 		for(int i = 0; i < 5; i++)
 			SmoothMap();
+
+		MeshGenerator meshGenerator = GetComponent<MeshGenerator>();
+		meshGenerator.GenerateMesh(_map, 1);
 	}
 
 	public void FillMap()
@@ -100,16 +102,16 @@ public class MapGenerator : MonoBehaviour
 	{
 		if(_map != null)
 		{
-			for (int x = 0; x < Width; x++)
-			{
-				for (int y = 0; y < Height; y++)
-				{
-					Gizmos.color = _map[x, y] == (int)MapFillValues.FillSpace ? Color.black : Color.white;
+			//for (int x = 0; x < Width; x++)
+			//{
+			//	for (int y = 0; y < Height; y++)
+			//	{
+			//		Gizmos.color = _map[x, y] == (int)MapFillValues.FillSpace ? Color.black : Color.white;
 
-					var position = new Vector3(-Width / 2 + x + 0.5f, 0, -Height / 2 + y + 0.5f);
-					Gizmos.DrawCube (position, Vector3.one);
-				}
-			}
+			//		var position = new Vector3(-Width / 2 + x + 0.5f, 0, -Height / 2 + y + 0.5f);
+			//		Gizmos.DrawCube (position, Vector3.one);
+			//	}
+			//}
 		}
 	}
 }
