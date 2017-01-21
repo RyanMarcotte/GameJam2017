@@ -34,10 +34,12 @@ public class PlayerController : MonoBehaviour
 	private AudioSource _spaceshipExplosionAudioSource;
 	private AutomaticRotation _deathRotation = AutomaticRotation.None;
 
+    //UI Text
 	public Text HealthRemainingText;
 	public Text HealthRemainingBackendText;
     public Text FuelRemainingText;
 	public Text FuelRemainingBackendText;
+    public Text GameOverText;
 
 	/// <summary>
 	/// Gets the ship's rotation.
@@ -197,6 +199,7 @@ public class PlayerController : MonoBehaviour
         {
             _spaceshipExplosionAudioSource.Play();
             _spaceshipSpriteRenderer.color = new Color(_spaceshipSpriteRenderer.color.r, _spaceshipSpriteRenderer.color.g, _spaceshipSpriteRenderer.color.b, 0);
+            GameOverText.text = "GAME OVER";
             return;
         }
 
