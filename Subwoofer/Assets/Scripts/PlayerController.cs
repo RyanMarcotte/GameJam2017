@@ -6,13 +6,14 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-	private const float THRUST_SPEED = 7.5f;
-	private const float ROTATION_SPEED = 2.5f;
+	private const float THRUST_SPEED = 2.5f;
+	private const float ROTATION_SPEED = 5f;
 
 	//Use of rigid body allows the physics engine to apply
 	private Rigidbody2D _rigidBody;
 	private SpriteRenderer _spaceshipSpriteRenderer;
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
+	private IEnumerable<SpriteRenderer> _spaceshipBackThrusterSpriteRenderers;
 
 	/// <summary>
 	/// Gets the ship's rotation.
@@ -43,8 +44,9 @@ public class PlayerController : MonoBehaviour
 		// obtain a reference to the rigid body
 		_rigidBody = GetComponent<Rigidbody2D>();
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
-		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
-	}
+		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("mainthruster"));
+	    _spaceshipBackThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("backthruster"));
+    }
 	
 	//The update function runs each frame
 	void FixedUpdate ()
@@ -68,8 +70,12 @@ public class PlayerController : MonoBehaviour
 		_spaceshipSpriteRenderer.transform.localRotation = new Quaternion();
 		_spaceshipSpriteRenderer.transform.Rotate(Vector3.forward, -ShipRotation);
 
-		var color = new Color(1, 1, 1, ThrustersEngaged ? 1 : 0);
+		// show or hide thruster sprites based
+		var hidden = new Color(1, 1, 1, 0);
+		var shown = new Color(1, 1, 1, 1);
 		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
-			spriteRenderer.color = color;
+			spriteRenderer.color = inputY > 0 ? shown : hidden;
+		foreach (var spriteRenderer in _spaceshipBackThrusterSpriteRenderers)
+			spriteRenderer.color = inputY < 0 ? shown : hidden;
 	}
 }
