@@ -95,15 +95,27 @@ public class PlayerController : MonoBehaviour
 		_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 	}
 
-	//Display the 
-	void UpdateFuel()
+    /// <summary>
+    /// Create a graphical representation of the fuel to the user.
+    /// </summary>
+    void UpdateFuel()
     {
+        //Obtain fuel percentage
         int fuelRemainingPercentage = (int)((RemainingFuel * 100.0) / MaximumFuel);
+
+        //Set the fuel UI color
+        if (fuelRemainingPercentage > 66)
+            fuelRemainingText.color = Color.green;
+        else if (fuelRemainingPercentage > 33)
+            fuelRemainingText.color = Color.yellow;
+        else
+            fuelRemainingText.color = Color.red;
+
+        //Fill the fuel bar
         fuelRemainingText.text = "Fuel Remaining: ";
-        while(fuelRemainingPercentage > 0)
+        for (; fuelRemainingPercentage > 0; fuelRemainingPercentage -= 2)
         {
             fuelRemainingText.text += "|";
-            fuelRemainingPercentage -= 2;
         }
     }
 }
