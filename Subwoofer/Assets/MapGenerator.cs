@@ -12,13 +12,14 @@ public enum MapFillValues : int
 public class MapGenerator : MonoBehaviour 
 {
 	private int[,] _map;
-	private const int fillSpaceValue = 1;
-	private const int emptySpaceValue = 0;
 
 	[Range(0, 100)]
 	public int RandomMapFillPercentage;
 	public int Height;
 	public int Width;
+	public int BorderSize = 5;
+	public int RegionThresholdSize = 50;
+	public int EmptyRegionThresholdSize = 50;
 	public string Seed;
 	public bool UseRandomSeed;
 	
@@ -40,16 +41,17 @@ public class MapGenerator : MonoBehaviour
 		for(int i = 0; i < 5; i++)
 			SmoothMap();
 
-		var borderSize = 1;
-		int[,] borderedMap = new int[Width + borderSize * 2, Height + borderSize * 2];
+		ProcessMap();
+
+		int[,] borderedMap = new int[Width + BorderSize * 2, Height + BorderSize * 2];
 
 		for(int x = 0; x < borderedMap.GetLength(0); x++)
 		{
 			for(int y = 0; y < borderedMap.GetLength(1); y++)
 			{
-				if(x >= borderSize && x < (Width + borderSize) && y >= borderSize && y < (Height + borderSize))
+				if(x >= BorderSize && x < (Width + BorderSize) && y >= BorderSize && y < (Height + BorderSize))
 				{
-					borderedMap[x, y] = _map[(x - borderSize), (y - borderSize)];
+					borderedMap[x, y] = _map[(x - BorderSize), (y - BorderSize)];
 				}
 				else
 				{
@@ -103,7 +105,7 @@ public class MapGenerator : MonoBehaviour
 		{
 			for (int neighbourY = yValue - 1; neighbourY <= yValue + 1; neighbourY++) 
 			{
-				if (neighbourX >= 0 && neighbourX < Width && neighbourY >= 0 && neighbourY < Height) 
+				if (IsInMapRange(neighbourX, neighbourY)) 
 				{
 					if (neighbourX != xValue || neighbourY != yValue)
 						wallCount += _map [neighbourX, neighbourY];
@@ -114,6 +116,35 @@ public class MapGenerator : MonoBehaviour
 		}
 
 		return wallCount;
+	}
+
+	public void ProcessMap()
+	{
+		var wallRegions = GetRegions((int)MapFillValues.FillSpace);
+
+		foreach(var region in wallRegions)
+		{
+			if(region.Count < RegionThresholdSize)
+			{
+				foreach(var tile in region)
+				{
+					_map[tile.TileX, tile.TileY] = (int)MapFillValues.EmptySpace;
+				}
+			}
+		}
+
+		var roomRegions = GetRegions((int)MapFillValues.EmptySpace);
+
+		foreach (var roomRegion in roomRegions)
+		{
+			if (roomRegion.Count < EmptyRegionThresholdSize)
+			{
+				foreach (var roomtile in roomRegion)
+				{
+					_map[roomtile.TileX, roomtile.TileY] = (int)MapFillValues.FillSpace;
+				}
+			}
+		}
 	}
 
 	public void OnDrawGizmos()
@@ -131,5 +162,78 @@ public class MapGenerator : MonoBehaviour
 			//	}
 			//}
 		}
+	}
+
+	List<Coordinate> GetRegionTiles(int startX, int startY)
+	{
+		var tiles = new List<Coordinate>();
+		var mapFlags = new bool[Width, Height];
+		var tileType = _map[startX, startY];
+
+		var queue = new Queue<Coordinate>();
+		queue.Enqueue(new Coordinate(startX, startY));
+
+		mapFlags[startX, startY] = true;
+
+		while (queue.Count > 0)
+		{
+			var tile = queue.Dequeue();
+			tiles.Add(tile);
+
+			for(int x = (tile.TileX - 1); x <= (tile.TileX + 1); x++ )
+			{
+				for(int y = (tile.TileY - 1); y <= (tile.TileY + 1); y++)
+				{
+					//If tile is in region and is not on a diagonal and it isn't been checked and is of the right type
+					if(IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX) && !mapFlags[x, y] && _map[x, y] == tileType)
+					{
+						mapFlags[x, y] = true;
+						queue.Enqueue(new Coordinate(x, y));
+					}
+				}
+			}
+		}
+
+		return tiles;
+	}
+
+	List<List<Coordinate>> GetRegions(int tileType)
+	{
+		var regions = new List<List<Coordinate>>();
+		var mapFlags = new bool[Width, Height];
+
+		for(int x = 0; x < Width; x++)
+		{
+			for(int y = 0; y < Height; y++)
+			{
+				if(!mapFlags[x,y] && _map[x,y] == tileType)
+				{
+					var newRegion = GetRegionTiles(x, y);
+					regions.Add(newRegion);
+
+					foreach(var tile in newRegion)
+						mapFlags[tile.TileX, tile.TileY] = true;
+				}
+			}
+		}
+
+		return regions;
+	}
+
+	bool IsInMapRange(int x, int y)
+	{
+		return x >= 0 && x < Width && y >= 0 && y < Height;
+	}
+}
+
+public struct Coordinate
+{
+	public int TileX;
+	public int TileY;
+
+	public Coordinate(int tileX, int tileY)
+	{
+		this.TileX = tileX;
+		this.TileY = tileY;
 	}
 }
