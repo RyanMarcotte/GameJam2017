@@ -263,7 +263,84 @@ public class MapGenerator : MonoBehaviour
 	public void CreatePassage(Room roomA, Room roomB, Coordinate tileA, Coordinate tileB)
 	{
 		Room.ConnectRooms(roomA, roomB);
-		Debug.DrawLine(CoordinateToWorldPoint(tileA), CoordinateToWorldPoint(tileB), Color.green, 100);
+
+		var line = GetLine(tileA, tileB);
+
+		foreach(var coordinate in line)
+		{
+			DrawCircle(coordinate, 1);
+		}
+	}
+
+	public void DrawCircle(Coordinate center, int radius)
+	{
+		for(int x = -radius; x <= radius; x++)
+		{
+			for(int y = -radius; y <= radius; y++)
+			{
+				if( (x * x) + (y * y) <= (radius * radius))
+				{
+					var drawX = center.TileX + x;
+					var drawY = center.TileY + y;
+
+					if (IsInMapRange(drawX, drawY))
+						Map[drawX, drawY] = 0;
+				}
+			}
+		}
+	}
+
+	List<Coordinate> GetLine(Coordinate start, Coordinate end)
+	{
+		var line = new List<Coordinate>();
+		var xValue = start.TileX;
+		var yValue = start.TileY;
+
+		var dx = end.TileX - start.TileX;
+		var dy = end.TileY - start.TileY;
+
+		bool inverted = false;
+		var step = Math.Sign(dx);
+		var gradientStep = Math.Sign(dy);
+
+		var longest = Mathf.Abs(dx);
+		var shortest = Mathf.Abs(dy);
+
+		if(longest < shortest)
+		{
+			inverted = true;
+			longest = Mathf.Abs(dy);
+			shortest = Mathf.Abs(dx);
+
+			step = Math.Sign(dy);
+			gradientStep = Math.Sign(dx);
+		}
+
+		var gradientAccumulation = longest / 2;
+		
+		for(int i = 0; i < longest; i++)
+		{
+			line.Add(new Coordinate(xValue, yValue));
+
+			if (inverted)
+				yValue += step;
+			else
+				xValue += step;
+
+			gradientAccumulation += shortest;
+
+			if(gradientAccumulation >= longest)
+			{
+				if (inverted)
+					xValue += gradientStep;
+				else
+					yValue += gradientStep;
+
+				gradientAccumulation -= longest;
+			}
+		}
+
+		return line;
 	}
 
 	public Vector3 CoordinateToWorldPoint(Coordinate tile)
