@@ -1,11 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 
 public class Sonar : MonoBehaviour
 {
-
-
     public LayerMask targetMask;
     public LayerMask obstacleMask;
 
@@ -20,30 +17,16 @@ public class Sonar : MonoBehaviour
 
     public GameObject sonarMeshPrefab;
 
-    void LateUpdate()
-    {
-        if (Input.GetKeyDown("space"))
-        {
-            var mesh = DrawSonar(90, 4.5f * 3);
-            var instance = GameObject.Instantiate(sonarMeshPrefab);
-            instance.GetComponent<MeshFilter>().mesh = mesh;
-            instance.GetComponent<FadeBehaviour>().Fade();
-            instance.transform.position = transform.position;
-            instance.transform.rotation = transform.rotation;
-	        instance.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
-        }
-        if (Input.GetKeyDown(KeyCode.LeftControl))
-        {
-
-            var mesh = DrawSonar(360, 2.25f * 3);
-            var instance = GameObject.Instantiate(sonarMeshPrefab);
-            instance.GetComponent<MeshFilter>().mesh = mesh;
-            instance.GetComponent<FadeBehaviour>().Fade();
-            instance.transform.position = transform.position;
-            instance.transform.rotation = transform.rotation;
-			instance.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
-		}
-    }   
+	public void CreateSonarMesh(int beamSpanInDegrees, float beamLength)
+	{
+		var mesh = DrawSonar(beamSpanInDegrees, beamLength);
+		var instance = GameObject.Instantiate(sonarMeshPrefab);
+		instance.GetComponent<MeshFilter>().mesh = mesh;
+		instance.GetComponent<FadeBehaviour>().Fade();
+		instance.transform.position = transform.position;
+		instance.transform.rotation = transform.rotation;
+		instance.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+	}
 
     Mesh DrawSonar(int viewAngle, float viewRadius)
     {

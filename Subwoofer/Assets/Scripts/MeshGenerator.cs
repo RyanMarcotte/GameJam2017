@@ -1,199 +1,194 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class MeshGenerator : MonoBehaviour
 {
-    public SquareGrid SquareGridMap;
-    public MeshFilter Walls;
-    public MeshFilter Cave;
+	public SquareGrid SquareGridMap;
+	public MeshFilter Walls;
+	public MeshFilter Cave;
 
-    public bool IsIn2d;
+	public bool IsIn2d;
 
-    public List<Vector3> Vertices;
-    public List<int> Triangles;
+	public List<Vector3> Vertices;
+	public List<int> Triangles;
 
-    public Dictionary<int, List<Triangle>> TriangleDictionary = new Dictionary<int, List<Triangle>>();
-    public List<List<int>> Outlines = new List<List<int>>();
-    public HashSet<int> CheckedVertices = new HashSet<int>();
+	public Dictionary<int, List<Triangle>> TriangleDictionary = new Dictionary<int, List<Triangle>>();
+	public List<List<int>> Outlines = new List<List<int>>();
+	public HashSet<int> CheckedVertices = new HashSet<int>();
 
-    public void GenerateMesh(int[,] map, float squareSize)
-    {
-        Outlines.Clear();
-        Vertices.Clear();
-        TriangleDictionary.Clear();
+	public void GenerateMesh(int[,] map, float squareSize)
+	{
+		Outlines.Clear();
+		Vertices.Clear();
+		TriangleDictionary.Clear();
+		CheckedVertices.Clear();
 
-        this.SquareGridMap = new SquareGrid(map, squareSize);
+		this.SquareGridMap = new SquareGrid(map, squareSize);
 
-        Vertices = new List<Vector3>();
-        Triangles = new List<int>();
+		Vertices = new List<Vector3>();
+		Triangles = new List<int>();
 
-        for (int x = 0; x < SquareGridMap.Squares.GetLength(0); x++)
-        {
-            for (int y = 0; y < SquareGridMap.Squares.GetLength(1); y++)
-            {
-                TriangulateSquare(SquareGridMap.Squares[x, y]);
-            }
-        }
+		for (int x = 0; x < SquareGridMap.Squares.GetLength(0); x++)
+		{
+			for (int y = 0; y < SquareGridMap.Squares.GetLength(1); y++)
+			{
+				TriangulateSquare(SquareGridMap.Squares[x, y]);
+			}
+		}
 
-        var mesh = new Mesh();
-        Cave.mesh = mesh;
+		var mesh = new Mesh();
+		Cave.mesh = mesh;
 
-        mesh.vertices = Vertices.ToArray();
-        mesh.triangles = Triangles.ToArray();
-        mesh.RecalculateNormals();
+		mesh.vertices = Vertices.ToArray();
+		mesh.triangles = Triangles.ToArray();
+		mesh.RecalculateNormals();
 
-        if (!IsIn2d)
-        {
-            CreateWallMesh();
-            Generate2DColliders();
-        }
-        else
-        {
-            Generate2DColliders();
-        }
-    }
+		if (!IsIn2d)
+		{
+			CreateWallMesh();
+			Generate2DColliders();
+		}
+		else
+		{
+			Generate2DColliders();
+		}
+	}
 
-    private void CreateWallMesh()
-    {
-        CalculateMeshOutlines();
+	private void CreateWallMesh()
+	{
+		CalculateMeshOutlines();
 
-        var wallVertices = new List<Vector3>();
-        var wallTriangles = new List<int>();
-        var wallMesh = new Mesh();
-        float wallHeight = 5;
+		var wallVertices = new List<Vector3>();
+		var wallTriangles = new List<int>();
+		var wallMesh = new Mesh();
+		float wallHeight = 5;
 
-        foreach (var outline in Outlines)
-        {
-            for (int i = 0; i < outline.Count - 1; i++)
-            {
-                var startIndex = wallVertices.Count;
-                wallVertices.Add(Vertices[outline[i]]); //Left Vertex
-                wallVertices.Add(Vertices[outline[i + 1]]); //Right Vertex
-                wallVertices.Add(Vertices[outline[i]] - Vector3.back * wallHeight); //Bottom Left Vertex
-                wallVertices.Add(Vertices[outline[i + 1]] - Vector3.back * wallHeight); //Bottom Right Vertex
+		foreach (var outline in Outlines)
+		{
+			for (int i = 0; i < outline.Count - 1; i++)
+			{
+				var startIndex = wallVertices.Count;
+				wallVertices.Add(Vertices[outline[i]]); //Left Vertex
+				wallVertices.Add(Vertices[outline[i + 1]]); //Right Vertex
+				wallVertices.Add(Vertices[outline[i]] - Vector3.back * wallHeight); //Bottom Left Vertex
+				wallVertices.Add(Vertices[outline[i + 1]] - Vector3.back * wallHeight); //Bottom Right Vertex
 
-                //Create triangle going counter-clockwise
-                wallTriangles.Add(startIndex + 0);
-                wallTriangles.Add(startIndex + 2);
-                wallTriangles.Add(startIndex + 3);
+				//Create triangle going counter-clockwise
+				wallTriangles.Add(startIndex + 0);
+				wallTriangles.Add(startIndex + 2);
+				wallTriangles.Add(startIndex + 3);
 
-                //Create triangle going counter-clockwise
-                wallTriangles.Add(startIndex + 3);
-                wallTriangles.Add(startIndex + 1);
-                wallTriangles.Add(startIndex + 0);
-            }
-        }
+				//Create triangle going counter-clockwise
+				wallTriangles.Add(startIndex + 3);
+				wallTriangles.Add(startIndex + 1);
+				wallTriangles.Add(startIndex + 0);
+			}
+		}
 
-        wallMesh.vertices = wallVertices.ToArray();
-        wallMesh.triangles = wallTriangles.ToArray();
-        Walls.mesh = wallMesh;
+		wallMesh.vertices = wallVertices.ToArray();
+		wallMesh.triangles = wallTriangles.ToArray();
 
-        var wallCollider = Walls.gameObject.AddComponent<MeshCollider>();
-        wallCollider.sharedMesh = wallMesh;
-    }
+		Walls.mesh = wallMesh;
 
-    private void Generate2DColliders()
-    {
-        var currentColliders = gameObject.GetComponents<EdgeCollider2D>();
+		var wallCollider = Walls.gameObject.AddComponent<MeshCollider>();
 
-        for (int i = 0; i < currentColliders.Length; i++)
-        {
-            Destroy(currentColliders[i]);
-        }
+		wallCollider.sharedMesh = wallMesh;
+	}
 
-        CalculateMeshOutlines();
+	private void Generate2DColliders()
+	{
+		var currentColliders = gameObject.GetComponents<EdgeCollider2D>();
 
-        foreach (var outline in Outlines)
-        {
-            var edgeCollider = gameObject.AddComponent<EdgeCollider2D>();
-            var edgePoints = new Vector2[outline.Count];
+		for (int i = 0; i < currentColliders.Length; i++)
+		{
+			Destroy(currentColliders[i]);
+		}
 
-            for (int i = 0; i < outline.Count; i++)
-            {
-                edgePoints[i] = new Vector2(Vertices[outline[i]].x, Vertices[outline[i]].z);
-            }
+		CalculateMeshOutlines();
 
-            edgeCollider.points = edgePoints;
-        }
+		foreach (var outline in Outlines)
+		{
+			var edgeCollider = gameObject.AddComponent<EdgeCollider2D>();
+			var edgePoints = new Vector2[outline.Count];
 
-    }
+			for (int i = 0; i < outline.Count; i++)
+			{
+				edgePoints[i] = new Vector2(Vertices[outline[i]].x, Vertices[outline[i]].z);
+			}
 
-    // Use this for initialization
-    void Start()
-    {
-    }
+			edgeCollider.points = edgePoints;
+		}
 
-    // Update is called once per frame
-    void Update()
-    {
-    }
+	}
 
-    public void TriangulateSquare(SquareNode square)
-    {
-        switch (square.Configuration)
-        {
-            case 0:
-                break;
+	public void TriangulateSquare(SquareNode square)
+	{
+		switch (square.Configuration)
+		{
+			case 0:
+				break;
 
-            //1 point:
-            case 1:
-                CreateMeshFromPoints(square.CenterLeft, square.CenterBottom, square.BottomLeft);
-                break;
-            case 2:
-                CreateMeshFromPoints(square.BottomRight, square.CenterBottom, square.CenterRight);
-                break;
-            case 4:
-                CreateMeshFromPoints(square.TopRight, square.CenterRight, square.CenterTop);
-                break;
-            case 8:
-                CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterLeft);
-                break;
+			//1 point:
+			case 1:
+				CreateMeshFromPoints(square.CenterLeft, square.CenterBottom, square.BottomLeft);
+				break;
+			case 2:
+				CreateMeshFromPoints(square.BottomRight, square.CenterBottom, square.CenterRight);
+				break;
+			case 4:
+				CreateMeshFromPoints(square.TopRight, square.CenterRight, square.CenterTop);
+				break;
+			case 8:
+				CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterLeft);
+				break;
 
-            //2 points:
-            case 3:
-                CreateMeshFromPoints(square.CenterRight, square.BottomRight, square.BottomLeft, square.CenterLeft);
-                break;
-            case 6:
-                CreateMeshFromPoints(square.CenterTop, square.TopRight, square.BottomRight, square.CenterBottom);
-                break;
-            case 9:
-                CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterBottom, square.BottomLeft);
-                break;
-            case 12:
-                CreateMeshFromPoints(square.TopLeft, square.TopRight, square.CenterRight, square.CenterLeft);
-                break;
-            case 5:
-                CreateMeshFromPoints(square.CenterTop, square.TopRight, square.CenterRight, square.CenterBottom, square.BottomLeft, square.CenterLeft);
-                break;
-            case 10:
-                CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterRight, square.BottomRight, square.CenterBottom, square.CenterLeft);
-                break;
+			//2 points:
+			case 3:
+				CreateMeshFromPoints(square.CenterRight, square.BottomRight, square.BottomLeft, square.CenterLeft);
+				break;
+			case 6:
+				CreateMeshFromPoints(square.CenterTop, square.TopRight, square.BottomRight, square.CenterBottom);
+				break;
+			case 9:
+				CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterBottom, square.BottomLeft);
+				break;
+			case 12:
+				CreateMeshFromPoints(square.TopLeft, square.TopRight, square.CenterRight, square.CenterLeft);
+				break;
+			case 5:
+				CreateMeshFromPoints(square.CenterTop, square.TopRight, square.CenterRight, square.CenterBottom, square.BottomLeft, square.CenterLeft);
+				break;
+			case 10:
+				CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterRight, square.BottomRight, square.CenterBottom, square.CenterLeft);
+				break;
 
-            //3 points:
-            case 7:
-                CreateMeshFromPoints(square.CenterTop, square.TopRight, square.BottomRight, square.BottomLeft, square.CenterLeft);
-                break;
-            case 11:
-                CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterRight, square.BottomRight, square.BottomLeft);
-                break;
-            case 13:
-                CreateMeshFromPoints(square.TopLeft, square.TopRight, square.CenterRight, square.CenterBottom, square.BottomLeft);
-                break;
-            case 14:
-                CreateMeshFromPoints(square.TopLeft, square.TopRight, square.BottomRight, square.CenterBottom, square.CenterLeft);
-                break;
+			//3 points:
+			case 7:
+				CreateMeshFromPoints(square.CenterTop, square.TopRight, square.BottomRight, square.BottomLeft, square.CenterLeft);
+				break;
+			case 11:
+				CreateMeshFromPoints(square.TopLeft, square.CenterTop, square.CenterRight, square.BottomRight, square.BottomLeft);
+				break;
+			case 13:
+				CreateMeshFromPoints(square.TopLeft, square.TopRight, square.CenterRight, square.CenterBottom, square.BottomLeft);
+				break;
+			case 14:
+				CreateMeshFromPoints(square.TopLeft, square.TopRight, square.BottomRight, square.CenterBottom, square.CenterLeft);
+				break;
 
-            //4 points:
-            case 15:
-                CreateMeshFromPoints(square.TopLeft, square.TopRight, square.BottomRight, square.BottomLeft);
-                CheckedVertices.Add(square.TopLeft.VertexIndex);
-                CheckedVertices.Add(square.TopRight.VertexIndex);
-                CheckedVertices.Add(square.BottomRight.VertexIndex);
-                CheckedVertices.Add(square.BottomLeft.VertexIndex);
-                break;
-        }
-    }
+			//4 points:
+			case 15:
+				CreateMeshFromPoints(square.TopLeft, square.TopRight, square.BottomRight, square.BottomLeft);
+				CheckedVertices.Add(square.TopLeft.VertexIndex);
+				CheckedVertices.Add(square.TopRight.VertexIndex);
+				CheckedVertices.Add(square.BottomRight.VertexIndex);
+				CheckedVertices.Add(square.BottomLeft.VertexIndex);
+				break;
+		}
+	}
 
 	public Vector3? GetLandingPadPosition(int xCoordinate, int yCoordinate)
 	{
@@ -207,270 +202,351 @@ public class MeshGenerator : MonoBehaviour
 		return null;
 	}
 
-	public Vector3? GetSquareNodePosition(int xCoordinate, int yCoordinate)
+	public List<Vector3> GetDistributedSquareNodePosition(int totalNumberPoints)
 	{
-		var square = SquareGridMap.Squares[xCoordinate, yCoordinate];
+		var distributedPositions = new List<Vector3>();
 
-		if (square.Configuration == 0)
+		var numberOfObjectsNearCenter = (int)(totalNumberPoints * 0.55);
+		var numberOfObjectsNearMiddle = (int)(totalNumberPoints * 0.3);
+		var numberOfObjectsOnOutside = (int)(totalNumberPoints * 0.15);
+
+		var totalNumberOfObjects = numberOfObjectsNearCenter + numberOfObjectsNearMiddle + numberOfObjectsOnOutside;
+		var difference = totalNumberPoints - totalNumberOfObjects;
+
+		numberOfObjectsOnOutside += difference;
+
+		var positionsCloseToCenter = SquareGridMap.EmptySquares.Where(x => x.Weight == 3).ToArray();
+
+		ShuffleSquaresArray(positionsCloseToCenter);
+
+		for (int i = 0; i < numberOfObjectsNearCenter; i++)
 		{
-			return square.CenterTop.Position;
+			distributedPositions.Add(positionsCloseToCenter[i].CenterTop.Position);
 		}
 
-		return null;
+		var positionsInMiddle = SquareGridMap.EmptySquares.Where(x => x.Weight == 2).ToArray();
+
+		ShuffleSquaresArray(positionsInMiddle);
+
+		for (int i = 0; i < numberOfObjectsNearMiddle; i++)
+		{
+			distributedPositions.Add(positionsInMiddle[i].CenterTop.Position);
+		}
+
+		var positionsOnOutside = SquareGridMap.EmptySquares.Where(x => x.Weight == 1).ToArray();
+
+		ShuffleSquaresArray(positionsOnOutside);
+
+		for (int i = 0; i < numberOfObjectsOnOutside; i++)
+		{
+			distributedPositions.Add(positionsOnOutside[i].CenterTop.Position);
+		}
+
+		return distributedPositions;
 	}
 
-    private void CreateMeshFromPoints(params Node[] points)
-    {
-        AssignVertices(points);
+	private void ShuffleSquaresArray(SquareNode[] array)
+	{
+		SquareNode temp;
+		var randomNumberGenerator = new System.Random();
 
-        if (points.Length >= 3)
-            CreateTriangle(points[0], points[1], points[2]);
-        if (points.Length >= 4)
-            CreateTriangle(points[0], points[2], points[3]);
-        if (points.Length >= 5)
-            CreateTriangle(points[0], points[3], points[4]);
-        if (points.Length >= 6)
-            CreateTriangle(points[0], points[4], points[5]);
-    }
+		for (int i = (array.Length - 1); i > 0; i--)
+		{
+			var j = randomNumberGenerator.Next(0, i);
+			temp = array[j];
+			array[j] = array[i];
+			array[i] = temp;
+		}
+	}
 
-    private void AssignVertices(Node[] points)
-    {
-        for (int i = 0; i < points.Length; i++)
-        {
-            if (points[i].VertexIndex == -1)
-            {
-                points[i].VertexIndex = Vertices.Count;
-                Vertices.Add(points[i].Position);
-            }
-        }
-    }
+	private void CreateMeshFromPoints(params Node[] points)
+	{
+		AssignVertices(points);
 
-    private void CreateTriangle(Node pointA, Node pointB, Node pointC)
-    {
-        Triangles.Add(pointA.VertexIndex);
-        Triangles.Add(pointB.VertexIndex);
-        Triangles.Add(pointC.VertexIndex);
+		if (points.Length >= 3)
+			CreateTriangle(points[0], points[1], points[2]);
+		if (points.Length >= 4)
+			CreateTriangle(points[0], points[2], points[3]);
+		if (points.Length >= 5)
+			CreateTriangle(points[0], points[3], points[4]);
+		if (points.Length >= 6)
+			CreateTriangle(points[0], points[4], points[5]);
+	}
 
-        var triangle = new Triangle(pointA.VertexIndex, pointB.VertexIndex, pointC.VertexIndex);
-        AddTriangleToDictionary(pointA.VertexIndex, triangle);
-        AddTriangleToDictionary(pointB.VertexIndex, triangle);
-        AddTriangleToDictionary(pointC.VertexIndex, triangle);
-    }
+	private void AssignVertices(Node[] points)
+	{
+		for (int i = 0; i < points.Length; i++)
+		{
+			if (points[i].VertexIndex == -1)
+			{
+				points[i].VertexIndex = Vertices.Count;
+				Vertices.Add(points[i].Position);
+			}
+		}
+	}
 
-    private void AddTriangleToDictionary(int vertexIndexKey, Triangle triangle)
-    {
-        if (!TriangleDictionary.ContainsKey(vertexIndexKey))
-            TriangleDictionary[vertexIndexKey] = new List<Triangle>();
+	private void CreateTriangle(Node pointA, Node pointB, Node pointC)
+	{
+		Triangles.Add(pointA.VertexIndex);
+		Triangles.Add(pointB.VertexIndex);
+		Triangles.Add(pointC.VertexIndex);
 
-        TriangleDictionary[vertexIndexKey].Add(triangle);
-    }
+		var triangle = new Triangle(pointA.VertexIndex, pointB.VertexIndex, pointC.VertexIndex);
+		AddTriangleToDictionary(pointA.VertexIndex, triangle);
+		AddTriangleToDictionary(pointB.VertexIndex, triangle);
+		AddTriangleToDictionary(pointC.VertexIndex, triangle);
+	}
 
-    private bool IsOutlineEdge(int vertexA, int vertexB)
-    {
-        var trianglesContainingVertexA = TriangleDictionary[vertexA];
-        var sharedTriangleCount = 0;
+	private void AddTriangleToDictionary(int vertexIndexKey, Triangle triangle)
+	{
+		if (!TriangleDictionary.ContainsKey(vertexIndexKey))
+			TriangleDictionary[vertexIndexKey] = new List<Triangle>();
 
-        for (int i = 0; i < trianglesContainingVertexA.Count; i++)
-        {
-            if (trianglesContainingVertexA[i].Contains(vertexB))
-            {
-                sharedTriangleCount++;
+		TriangleDictionary[vertexIndexKey].Add(triangle);
+	}
 
-                if (sharedTriangleCount > 1)
-                    break;
-            }
-        }
+	private bool IsOutlineEdge(int vertexA, int vertexB)
+	{
+		var trianglesContainingVertexA = TriangleDictionary[vertexA];
+		var sharedTriangleCount = 0;
 
-        return sharedTriangleCount == 1;
-    }
+		for (int i = 0; i < trianglesContainingVertexA.Count; i++)
+		{
+			if (trianglesContainingVertexA[i].Contains(vertexB))
+			{
+				sharedTriangleCount++;
 
-    private int GetConnectedOutlineVertex(int vertexIndex)
-    {
-        var trianglesConntainingVertex = TriangleDictionary[vertexIndex];
+				if (sharedTriangleCount > 1)
+					break;
+			}
+		}
 
-        for (int i = 0; i < trianglesConntainingVertex.Count; i++)
-        {
-            var triangle = trianglesConntainingVertex[i];
+		return sharedTriangleCount == 1;
+	}
 
-            for (int j = 0; j < 3; j++)
-            {
-                var vertexB = triangle[j];
+	private int GetConnectedOutlineVertex(int vertexIndex)
+	{
+		var trianglesConntainingVertex = TriangleDictionary[vertexIndex];
 
-                if (vertexIndex != vertexB && !CheckedVertices.Contains(vertexB) && IsOutlineEdge(vertexIndex, vertexB))
-                    return vertexB;
-            }
-        }
+		for (int i = 0; i < trianglesConntainingVertex.Count; i++)
+		{
+			var triangle = trianglesConntainingVertex[i];
 
-        return -1;
-    }
+			for (int j = 0; j < 3; j++)
+			{
+				var vertexB = triangle[j];
 
-    private void CalculateMeshOutlines()
-    {
-        for (int vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
-        {
-            if (!CheckedVertices.Contains(vertexIndex))
-            {
-                var newOutlineIndex = GetConnectedOutlineVertex(vertexIndex);
+				if (vertexIndex != vertexB && !CheckedVertices.Contains(vertexB) && IsOutlineEdge(vertexIndex, vertexB))
+					return vertexB;
+			}
+		}
 
-                if (newOutlineIndex != -1)
-                {
-                    CheckedVertices.Add(vertexIndex);
+		return -1;
+	}
 
-                    var newOutline = new List<int>();
-                    newOutline.Add(vertexIndex);
-                    Outlines.Add(newOutline);
-                    FollowOutline(newOutlineIndex, Outlines.Count - 1);
-                    Outlines[Outlines.Count - 1].Add(vertexIndex);
-                }
-            }
-        }
-    }
+	private void CalculateMeshOutlines()
+	{
+		for (int vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
+		{
+			if (!CheckedVertices.Contains(vertexIndex))
+			{
+				var newOutlineIndex = GetConnectedOutlineVertex(vertexIndex);
 
-    private void FollowOutline(int vertexIndex, int outlineIndex)
-    {
-        Outlines[outlineIndex].Add(vertexIndex);
-        CheckedVertices.Add(vertexIndex);
-        var nextVertexIndex = GetConnectedOutlineVertex(vertexIndex);
+				if (newOutlineIndex != -1)
+				{
+					CheckedVertices.Add(vertexIndex);
 
-        if (nextVertexIndex != -1)
-            FollowOutline(nextVertexIndex, outlineIndex);
-    }
+					var newOutline = new List<int>();
+					newOutline.Add(vertexIndex);
+					Outlines.Add(newOutline);
+					FollowOutline(newOutlineIndex, Outlines.Count - 1);
+					Outlines[Outlines.Count - 1].Add(vertexIndex);
+				}
+			}
+		}
+	}
+
+	private void FollowOutline(int vertexIndex, int outlineIndex)
+	{
+		Outlines[outlineIndex].Add(vertexIndex);
+		CheckedVertices.Add(vertexIndex);
+		var nextVertexIndex = GetConnectedOutlineVertex(vertexIndex);
+
+		if (nextVertexIndex != -1)
+			FollowOutline(nextVertexIndex, outlineIndex);
+	}
 }
 
 
 public struct Triangle
 {
-    public int VertexIndexA;
-    public int VertexIndexB;
-    public int VertexIndexC;
-    int[] Vertices;
+	public int VertexIndexA;
+	public int VertexIndexB;
+	public int VertexIndexC;
+	int[] Vertices;
 
-    public Triangle(int vertexIndexA, int vertexIndexB, int vertexIndexC)
-    {
-        this.VertexIndexA = vertexIndexA;
-        this.VertexIndexB = vertexIndexB;
-        this.VertexIndexC = vertexIndexC;
+	public Triangle(int vertexIndexA, int vertexIndexB, int vertexIndexC)
+	{
+		this.VertexIndexA = vertexIndexA;
+		this.VertexIndexB = vertexIndexB;
+		this.VertexIndexC = vertexIndexC;
 
-        Vertices = new int[3];
-        Vertices[0] = vertexIndexA;
-        Vertices[1] = vertexIndexB;
-        Vertices[2] = vertexIndexC;
-    }
+		Vertices = new int[3];
+		Vertices[0] = vertexIndexA;
+		Vertices[1] = vertexIndexB;
+		Vertices[2] = vertexIndexC;
+	}
 
-    public bool Contains(int vertexIndex)
-    {
-        return vertexIndex == VertexIndexA || vertexIndex == VertexIndexB || vertexIndex == VertexIndexC;
-    }
+	public bool Contains(int vertexIndex)
+	{
+		return vertexIndex == VertexIndexA || vertexIndex == VertexIndexB || vertexIndex == VertexIndexC;
+	}
 
-    public int this[int index]
-    {
-        get
-        {
-            return Vertices[index];
-        }
-    }
+	public int this[int index]
+	{
+		get
+		{
+			return Vertices[index];
+		}
+	}
 }
 
 public class Node
 {
-    public Vector3 Position;
-    public int VertexIndex = -1;
+	public Vector3 Position;
+	public int VertexIndex = -1;
 
-    public Node(Vector3 position)
-    {
-        this.Position = position;
-    }
+	public Node(Vector3 position)
+	{
+		this.Position = position;
+	}
 }
 
 public class ControlNode : Node
 {
-    public bool IsActive;
-    public Node UpperNode;
-    public Node RightNode;
+	public bool IsActive;
+	public Node UpperNode;
+	public Node RightNode;
 
-    public ControlNode(Vector3 position, bool active, float squareSize) : base(position)
-    {
-        this.IsActive = active;
-        this.UpperNode = new Node(Position + Vector3.up * squareSize / 2f);
-        this.RightNode = new Node(Position + Vector3.right * squareSize / 2f);
-    }
+	public ControlNode(Vector3 position, bool active, float squareSize) : base(position)
+	{
+		this.IsActive = active;
+		this.UpperNode = new Node(Position + Vector3.up * squareSize / 2f);
+		this.RightNode = new Node(Position + Vector3.right * squareSize / 2f);
+	}
 }
 
 public class SquareNode
 {
-    public ControlNode TopLeft;
-    public ControlNode TopRight;
-    public ControlNode BottomRight;
-    public ControlNode BottomLeft;
+	public ControlNode TopLeft;
+	public ControlNode TopRight;
+	public ControlNode BottomRight;
+	public ControlNode BottomLeft;
 
-    public Node CenterTop;
-    public Node CenterRight;
-    public Node CenterBottom;
-    public Node CenterLeft;
+	public Node CenterTop;
+	public Node CenterRight;
+	public Node CenterBottom;
+	public Node CenterLeft;
 
-    public int Configuration;
+	public int Weight;
+	public int Configuration;
 
-    public SquareNode(ControlNode topLeft, ControlNode topRight, ControlNode bottomRight, ControlNode bottomLeft)
-    {
-        this.TopLeft = topLeft;
-        this.TopRight = topRight;
-        this.BottomRight = bottomRight;
-        this.BottomLeft = bottomLeft;
+	public SquareNode(ControlNode topLeft, ControlNode topRight, ControlNode bottomRight, ControlNode bottomLeft, int weight)
+	{
+		this.TopLeft = topLeft;
+		this.TopRight = topRight;
+		this.BottomRight = bottomRight;
+		this.BottomLeft = bottomLeft;
 
-        this.CenterTop = TopLeft.RightNode;
-        this.CenterRight = BottomRight.UpperNode;
-        this.CenterBottom = BottomLeft.RightNode;
-        this.CenterLeft = BottomLeft.UpperNode;
+		this.CenterTop = TopLeft.RightNode;
+		this.CenterRight = BottomRight.UpperNode;
+		this.CenterBottom = BottomLeft.RightNode;
+		this.CenterLeft = BottomLeft.UpperNode;
 
-        CalculateConfiguration();
-    }
+		this.Weight = weight;
 
-    private void CalculateConfiguration()
-    {
-        Configuration = 0;
+		CalculateConfiguration();
+	}
 
-        if (TopLeft.IsActive)
-            Configuration += 8;
-        if (TopRight.IsActive)
-            Configuration += 4;
-        if (BottomRight.IsActive)
-            Configuration += 2;
-        if (BottomLeft.IsActive)
-            Configuration += 1;
-    }
+	private void CalculateConfiguration()
+	{
+		Configuration = 0;
 
+		if (TopLeft.IsActive)
+			Configuration += 8;
+		if (TopRight.IsActive)
+			Configuration += 4;
+		if (BottomRight.IsActive)
+			Configuration += 2;
+		if (BottomLeft.IsActive)
+			Configuration += 1;
+	}
 }
 
 public class SquareGrid
 {
-    public SquareNode[,] Squares;
+	public SquareNode[,] Squares;
+	public List<SquareNode> EmptySquares;
 
-    public SquareGrid(int[,] map, float squareSize)
-    {
-        var nodeCountX = map.GetLength(0);
-        var nodeCountY = map.GetLength(1);
-        var mapWidth = nodeCountX * squareSize;
-        var mapHeight = nodeCountY * squareSize;
+	public SquareGrid(int[,] map, float squareSize)
+	{
+		var nodeCountX = map.GetLength(0);
+		var nodeCountY = map.GetLength(1);
+		var mapWidth = nodeCountX * squareSize;
+		var mapHeight = nodeCountY * squareSize;
 
-        ControlNode[,] controlNodes = new ControlNode[nodeCountX, nodeCountY];
+		ControlNode[,] controlNodes = new ControlNode[nodeCountX, nodeCountY];
 
-        for (int x = 0; x < nodeCountX; x++)
-        {
-            for (int y = 0; y < nodeCountY; y++)
-            {
-                var position = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
-                controlNodes[x, y] = new ControlNode(position, (map[x, y] == 1), squareSize);
-            }
-        }
+		for (int x = 0; x < nodeCountX; x++)
+		{
+			for (int y = 0; y < nodeCountY; y++)
+			{
+				var position = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
+				controlNodes[x, y] = new ControlNode(position, (map[x, y] == 1), squareSize);
+			}
+		}
 
-        Squares = new SquareNode[(nodeCountX - 1), (nodeCountY - 1)];
+		Squares = new SquareNode[(nodeCountX - 1), (nodeCountY - 1)];
+		EmptySquares = new List<SquareNode>();
 
-        for (int x = 0; x < (nodeCountX - 1); x++)
-        {
-            for (int y = 0; y < (nodeCountY - 1); y++)
-            {
-                Squares[x, y] = new SquareNode(controlNodes[x, (y + 1)], controlNodes[(x + 1), (y + 1)], controlNodes[(x + 1), y], controlNodes[x, y]);
-            }
-        }
-    }
+		var centerX = (int)Math.Floor((decimal)((nodeCountX - 1) / 2));
+		var centerY = (int)Math.Floor((decimal)((nodeCountY - 1) / 2));
+		var distanceToEdgeSquared = (centerX * centerX) + (centerY * centerY);
+		var oneThirdRadius = distanceToEdgeSquared / 8;
+		var twoThridRadius = (distanceToEdgeSquared * 3) / 8;
+
+		for (int x = 0; x < (nodeCountX - 1); x++)
+		{
+			for (int y = 0; y < (nodeCountY - 1); y++)
+			{
+				var calculatedDistance = CalculatedDistance(centerX, centerY, x, y);
+				var weight = CalculatedWeightedNode(centerX, centerY, x, y, calculatedDistance, oneThirdRadius, twoThridRadius);
+
+				Squares[x, y] = new SquareNode(controlNodes[x, (y + 1)], controlNodes[(x + 1), (y + 1)], controlNodes[(x + 1), y], controlNodes[x, y], weight);
+
+				if (Squares[x, y].Configuration == 0)
+					EmptySquares.Add(Squares[x, y]);
+			}
+		}
+	}
+
+	private int CalculatedWeightedNode(int centerX, int centerY, int pointX, int pointY, int distance, int oneThirdRadius, int twoThirdRadius)
+	{
+		if (centerX == pointX && centerY == pointY)
+			return 3;
+
+		if (distance <= oneThirdRadius)
+			return 3;
+
+		else if (distance <= twoThirdRadius)
+			return 2;
+
+		else
+			return 1;
+	}
+
+	private int CalculatedDistance(int centerX, int centerY, int pointX, int pointY)
+	{
+		return ((pointX - centerX) * (pointX - centerX)) + ((pointY - centerY) * (pointY - centerY));
+	}
 }
