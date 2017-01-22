@@ -68,7 +68,11 @@ public class PlayerController : MonoBehaviour
 	/// <summary>
 	/// Gets the amount of remaining health.
 	/// </summary>
-	public int RemainingHealth { get { return _remainingHealth > 0 ? _remainingHealth : 0; } private set { _remainingHealth = value; } }
+	public int RemainingHealth
+	{
+		get { return _remainingHealth > 0 ? _remainingHealth : 0; }
+		private set { _remainingHealth = value; }
+	}
 
 	/// <summary>
 	/// Gets the maximum health capacity.
@@ -94,7 +98,7 @@ public class PlayerController : MonoBehaviour
     void Start ()
     {
 		ThrustersEngaged = false;
-	    RemainingHealth = MaximumHealth / 2;
+	    RemainingHealth = MaximumHealth;
 	    RemainingFuel = MaximumFuel;
 	    UpdateUI();
 
