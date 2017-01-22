@@ -271,7 +271,11 @@ public class PlayerController : MonoBehaviour
 		    _healthPickupAudioSource.PlayOneShot(_healthPickupAudioSource.clip, 1);
 			RemainingHealth = (RemainingHealth > MaximumHealth * 2 / 3 ? MaximumHealth : RemainingHealth + MaximumHealth / 3);
 		}
-        //Goal!
+		//Goal!
+		else if (pickup.tag == "Goal")
+		{
+			_objectivePickupAudioSource.PlayOneShot(_objectivePickupAudioSource.clip, 1);
+		}
 
         //Health
         pickup.gameObject.SetActive(false);
