@@ -123,26 +123,22 @@ public class PlayerController : MonoBehaviour
 	{
 		UpdateUI();
 
-		//Handle death and victory
-		if (RemainingHealth <= 0 || VictoryText.text == "YOU WIN")
-		{
-            //Death specific changes
-            if (VictoryText.text != "YOU WIN")
-            {                
-                _spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
-                foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
-                    spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
-                _spaceshipThrusterAudioSource.mute = true;
-            }
-
-            //Victory and death changes
+		//Handle death
+		if (RemainingHealth <= 0)
+		{            
+            _spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
+            foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
+                spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
+            _spaceshipThrusterAudioSource.mute = true;
             _rigidBody.velocity = Vector3.zero;
 			return;
 		}
 
-        if(VictoryText.text != "")
+        //Handle victory
+        if(VictoryText.text == "YOU WIN!")
         {
-            _spaceshipThrusterAudioSource.mute = true;
+            _rigidBody.velocity = Vector3.zero;
+            Application.Quit();
             return;
         }
 
