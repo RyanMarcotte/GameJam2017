@@ -138,7 +138,8 @@ public class PlayerController : MonoBehaviour
         if(VictoryText.text == "YOU WIN!")
         {
             _rigidBody.velocity = Vector3.zero;
-            Application.Quit();
+			_spaceshipThrusterAudioSource.mute = true;
+			Application.Quit();
             return;
         }
 

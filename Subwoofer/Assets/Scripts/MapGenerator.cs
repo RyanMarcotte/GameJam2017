@@ -101,7 +101,7 @@ public class MapGenerator : MonoBehaviour
 			return null;
 		 
 		Player.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, Player.gameObject.transform.position.z);
-		usedWorldPositions.Add(new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, _firstRoom.LandingPadPosition.Value.z));
+		usedWorldPositions.Add(Player.gameObject.transform.position);
 		Camera.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, -10);
 
 		_lastRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).LastOrDefault(x => x.LandingPadPosition != null);
@@ -109,8 +109,8 @@ public class MapGenerator : MonoBehaviour
 		if (_lastRoom == null || _lastRoom.LandingPadPosition == null || Goal == null)
 			return null;
 
-		Goal.gameObject.transform.position = _lastRoom.LandingPadPosition.Value;
-		usedWorldPositions.Add(new Vector3(_lastRoom.LandingPadPosition.Value.x, _lastRoom.LandingPadPosition.Value.y, _lastRoom.LandingPadPosition.Value.z));
+		Goal.gameObject.transform.position = new Vector3(_lastRoom.LandingPadPosition.Value.x, _lastRoom.LandingPadPosition.Value.y, Player.gameObject.transform.position.z);
+		usedWorldPositions.Add(Goal.gameObject.transform.position);
 
 		return usedWorldPositions;
 	}
