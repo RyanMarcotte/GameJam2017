@@ -16,8 +16,8 @@ public class PlayerController : MonoBehaviour
 
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
-	private const int MAXIMUM_HEALTH = 20000;
-    private const int MAXIMUM_FUEL = 20000;
+	private const int MAXIMUM_HEALTH = 10000;
+    private const int MAXIMUM_FUEL = 10000;
 	private const int MAXIMUM_ENERGY = 250;
 	private const int CONE_SHOT_ENERGY_REQUIREMENT = 20;
 	private const int CONE_SHOT_BEAM_ANGLE_IN_DEGREES = 90;
@@ -168,7 +168,8 @@ public class PlayerController : MonoBehaviour
 				spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
 			_spaceshipThrusterAudioSource.mute = true;
 			_rigidBody.velocity = Vector3.zero;
-			return;
+            Menu.gameObject.SetActive(true);
+            return;
 		}
 
 		//Handle victory
