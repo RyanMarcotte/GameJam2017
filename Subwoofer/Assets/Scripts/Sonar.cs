@@ -5,9 +5,6 @@ using System.Collections.Generic;
 public class Sonar : MonoBehaviour
 {
 
-    public float viewRadius;
-    [Range(0, 360)]
-    public float viewAngle;
 
     public LayerMask targetMask;
     public LayerMask obstacleMask;
@@ -23,67 +20,32 @@ public class Sonar : MonoBehaviour
 
     public GameObject sonarMeshPrefab;
 
-    void Start()
-    {
-
-        StartCoroutine("FindTargetsWithDelay", .2f);
-    }
-
-
-    IEnumerator FindTargetsWithDelay(float delay)
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(delay);
-            FindVisibleTargets();
-        }
-    }
-
     void LateUpdate()
     {
         if (Input.GetKeyDown("space"))
         {
-            var mesh = DrawSonar();
+            var mesh = DrawSonar(90, 4.5f);
             var instance = GameObject.Instantiate(sonarMeshPrefab);
             instance.GetComponent<MeshFilter>().mesh = mesh;
             instance.GetComponent<FadeBehaviour>().Fade();
             instance.transform.position = transform.position;
             instance.transform.rotation = transform.rotation;
-            //StartCoroutine("ModifySonarAndClear", 1f);
         }
-    }
-
-    //IEnumerator ModifySonarAndClear(float delay)
-    //{
-    //    viewMeshFilter.GetComponent<FadeBehaviour>().Fade();
-
-    //    yield return new WaitForSeconds(delay);
-    //    viewMesh.Clear();
-    //}
-
-
-    void FindVisibleTargets()
-    {
-        visibleTargets.Clear();
-        Collider[] targetsInViewRadius = Physics.OverlapSphere(transform.position, viewRadius, targetMask);
-
-        for (int i = 0; i < targetsInViewRadius.Length; i++)
+        if (Input.GetKeyDown(KeyCode.LeftControl))
         {
-            Transform target = targetsInViewRadius[i].transform;
-            Vector3 dirToTarget = (target.position - transform.position).normalized;
-            if (Vector3.Angle(transform.up, dirToTarget) < viewAngle / 2)
-            {
-                float dstToTarget = Vector3.Distance(transform.position, target.position);
-                if (!Physics.Raycast(transform.position, dirToTarget, dstToTarget, obstacleMask))
-                {
-                    visibleTargets.Add(target);
-                }
-            }
-        }
-    }
 
-    Mesh DrawSonar()
+            var mesh = DrawSonar(360, 2.25f);
+            var instance = GameObject.Instantiate(sonarMeshPrefab);
+            instance.GetComponent<MeshFilter>().mesh = mesh;
+            instance.GetComponent<FadeBehaviour>().Fade();
+            instance.transform.position = transform.position;
+            instance.transform.rotation = transform.rotation;
+        }
+    }   
+
+    Mesh DrawSonar(int viewAngle, float viewRadius)
     {
+        
         int stepCount = Mathf.RoundToInt(viewAngle * meshResolution);
         float stepAngleSize = viewAngle / stepCount;
         List<Vector3> viewPoints = new List<Vector3>();
@@ -91,14 +53,14 @@ public class Sonar : MonoBehaviour
         for (int i = 0; i <= stepCount; i++)
         {
             float angle = -(transform.eulerAngles.z) - viewAngle / 2 + stepAngleSize * i;
-            ViewCastInfo newViewCast = ViewCast(angle);
+            ViewCastInfo newViewCast = ViewCast(angle, viewRadius);
 
             if (i > 0)
             {
                 bool edgeDstThresholdExceeded = Mathf.Abs(oldViewCast.dst - newViewCast.dst) > edgeDstThreshold;
                 if (oldViewCast.hit != newViewCast.hit || (oldViewCast.hit && newViewCast.hit && edgeDstThresholdExceeded))
                 {
-                    EdgeInfo edge = FindEdge(oldViewCast, newViewCast);
+                    EdgeInfo edge = FindEdge(oldViewCast, newViewCast, viewRadius);
                     if (edge.pointA != Vector3.zero)
                     {
                         viewPoints.Add(edge.pointA);
@@ -144,7 +106,7 @@ public class Sonar : MonoBehaviour
     }
 
 
-    EdgeInfo FindEdge(ViewCastInfo minViewCast, ViewCastInfo maxViewCast)
+    EdgeInfo FindEdge(ViewCastInfo minViewCast, ViewCastInfo maxViewCast, float viewRadius)
     {
         float minAngle = minViewCast.angle;
         float maxAngle = maxViewCast.angle;
@@ -154,7 +116,7 @@ public class Sonar : MonoBehaviour
         for (int i = 0; i < edgeResolveIterations; i++)
         {
             float angle = (minAngle + maxAngle) / 2;
-            ViewCastInfo newViewCast = ViewCast(angle);
+            ViewCastInfo newViewCast = ViewCast(angle,  viewRadius);
 
             bool edgeDstThresholdExceeded = Mathf.Abs(minViewCast.dst - newViewCast.dst) > edgeDstThreshold;
             if (newViewCast.hit == minViewCast.hit && !edgeDstThresholdExceeded)
@@ -173,7 +135,7 @@ public class Sonar : MonoBehaviour
     }
 
 
-    ViewCastInfo ViewCast(float globalAngle)
+    ViewCastInfo ViewCast(float globalAngle, float viewRadius)
     {
         Vector3 dir = DirFromAngle(globalAngle, true);
         RaycastHit hit;

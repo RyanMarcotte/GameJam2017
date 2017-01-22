@@ -17,6 +17,7 @@ public class FadeBehaviour : MonoBehaviour {
     
     private IEnumerator FadeMechanic()
     {
+        yield return new WaitForSeconds(0.5f);
         var sonarRenderer = GetComponent<Renderer>();
         while (sonarRenderer.material.color.a > 0.0f)
         {
