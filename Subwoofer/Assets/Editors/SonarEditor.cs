@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEditor;
 
 [CustomEditor (typeof (Sonar))]
-public class SonarEditor : Editor {
+public class SonarEditor : Editor
+{
 
     void OnSceneGUI()
     {

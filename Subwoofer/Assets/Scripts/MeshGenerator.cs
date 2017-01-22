@@ -119,16 +119,6 @@ public class MeshGenerator : MonoBehaviour
 
     }
 
-    // Use this for initialization
-    void Start()
-    {
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-    }
-
     public void TriangulateSquare(SquareNode square)
     {
         switch (square.Configuration)

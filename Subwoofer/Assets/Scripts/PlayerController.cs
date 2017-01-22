@@ -16,8 +16,8 @@ public class PlayerController : MonoBehaviour
 
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
-	private const int MAXIMUM_HEALTH = int.MaxValue;
-    private const int MAXIMUM_FUEL = int.MaxValue;
+	private const int MAXIMUM_HEALTH = 20000;
+    private const int MAXIMUM_FUEL = 20000;
 
 	private const char UI_CHARACTER = '|';
 	private const int UI_SCALE = 2;
@@ -46,6 +46,9 @@ public class PlayerController : MonoBehaviour
     public Text EnergyRemainingBackendText;
     public Text GameOverText;
     public Text VictoryText;
+
+    //UI Menus
+    public GameObject Menu;
 
 	/// <summary>
 	/// Gets the ship's rotation.
@@ -99,18 +102,25 @@ public class PlayerController : MonoBehaviour
 	public int MaximumFuel { get { return MAXIMUM_FUEL; } }
 
     //The start function runs once at the beginning of the game
-    void Start ()
+    public void Start ()
     {
+        //Initialize values
 		ThrustersEngaged = false;
 	    RemainingHealth = MaximumHealth;
 	    RemainingFuel = MaximumFuel;
-	    UpdateUI();
 
-		// obtain a reference to the rigid body
-		_rigidBody = GetComponent<Rigidbody>();
+        //Update the UI and hide menu
+	    UpdateUI();
+        //Menu.gameObject.SetActive(false);
+
+        //Get the rigid body
+        _rigidBody = GetComponent<Rigidbody>();
+
+        //Spaceship image renderers
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
 	    
+        //Obtain audio sources
 		var allAudioSources = GetComponentsInChildren<AudioSource>();
 	    _spaceshipThrusterAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipThrusterLoop") == 0);
 	    _spaceshipWallCollisionAudioSourceCollection = allAudioSources.Where(x => x.clip.name.ToLower().Contains("hitwall"));
@@ -137,12 +147,11 @@ public class PlayerController : MonoBehaviour
 		}
 
         //Handle victory
-        if(VictoryText.text == "YOU WIN!")
+        if(VictoryText.text == "YOU WIN")
         {
             _rigidBody.velocity = Vector3.zero;
 			_spaceshipThrusterAudioSource.mute = true;
-			Application.Quit();
-            return;
+            Menu.gameObject.SetActive(true);
         }
 
 		// obtain the movements
@@ -286,7 +295,7 @@ public class PlayerController : MonoBehaviour
 		else if (pickup.tag == "Goal")
 		{
 			_objectivePickupAudioSource.PlayOneShot(_objectivePickupAudioSource.clip, 1);
-            VictoryText.text = "YOU WIN!";
+            VictoryText.text = "YOU WIN";
         }
 
         //Remove the pickup
