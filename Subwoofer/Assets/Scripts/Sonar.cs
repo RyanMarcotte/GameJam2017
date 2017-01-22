@@ -16,6 +16,7 @@ public class Sonar : MonoBehaviour
     public float maskCutawayDst = .1f;
 
     public GameObject sonarMeshPrefab;
+	public GameObject pingObjectPrefab;
 
 	public void CreateSonarMesh(int beamSpanInDegrees, float beamLength)
 	{
@@ -26,9 +27,44 @@ public class Sonar : MonoBehaviour
 		instance.transform.position = transform.position;
 		instance.transform.rotation = transform.rotation;
 		instance.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+		animate(beamLength, mesh.vertices);
 	}
 
-    Mesh DrawSonar(int viewAngle, float viewRadius)
+	void animate(float maxDistance, Vector3[] vertices)
+	{
+		Vector3 start = vertices[0];
+		// Finds points that are far enough from each other that avoid unnecessary overlapping
+		Vector3 next = start;
+		for (int i = 1; i < vertices.Length - 1; i++)
+		{
+
+			if (Vector3.Distance(next, vertices[i]) >= 0.05f)
+			{
+				next = vertices[i];
+				AddNewAnimationPoint(next, maxDistance);
+			}
+		}
+		AddNewAnimationPoint(vertices[vertices.Length - 1], maxDistance);
+	}
+
+	void AddNewAnimationPoint(Vector3 end, float maxDistance)
+	{
+		// Creates new ping object and acts upon main behaviour
+		var instance = GameObject.Instantiate(pingObjectPrefab);
+		instance.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+		Vector3 newEnd = RotatePointAroundPivot(transform.position + end, transform.position, transform.rotation.eulerAngles);
+		newEnd = Vector3.MoveTowards(transform.position, newEnd, 0.3f * Vector3.Distance(transform.position, newEnd));
+		instance.GetComponent<PingBehaviour>().AnimateSinglePingObject(transform.position, newEnd, maxDistance);
+	}
+
+	public Vector3 RotatePointAroundPivot(Vector3 point, Vector3 pivot, Vector3 angles)
+	{
+		Vector3 dir = point - pivot; // get point direction relative to pivot
+		dir = Quaternion.Euler(angles) * dir; // rotate it
+		point = dir + pivot; // calculate rotated point
+		return point; // return it
+	}
+	Mesh DrawSonar(int viewAngle, float viewRadius)
     {
         
         int stepCount = Mathf.RoundToInt(viewAngle * meshResolution);
