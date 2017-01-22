@@ -12,21 +12,12 @@ public class FuelAnimator : MonoBehaviour
         transform.Rotate(0, 0, Time.fixedDeltaTime * 90);
 
         //Pulse
-        if (increase == true)
+        transform.localScale += (new Vector3(0.005f, 0.005f, 0) * (increase == true ? 1 : -1));
+
+        //Control pulse radius
+        if (transform.localScale.x > 1.3f || transform.localScale.x < 0.7f)
         {
-            transform.localScale += new Vector3(0.01f, 0.01f, 0);
-            if (transform.localScale.x > 2.0f)
-            {
-                increase = false;
-            }
-        }
-        else
-        {
-            transform.localScale -= new Vector3(0.01f, 0.01f, 0);
-            if (transform.localScale.x < 0.5f)
-            {
-                increase = true;
-            }
+            increase = !increase;
         }
     }
 }
