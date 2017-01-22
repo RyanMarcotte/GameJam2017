@@ -195,7 +195,7 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-	public Vector3? IsLandingPadSquare(int xCoordinate, int yCoordinate)
+	public Vector3? GetLandingPadPosition(int xCoordinate, int yCoordinate)
 	{
 		var square = SquareGridMap.Squares[xCoordinate, yCoordinate];
 
@@ -205,7 +205,18 @@ public class MeshGenerator : MonoBehaviour
 		}
 
 		return null;
+	}
 
+	public Vector3? GetSquareNodePosition(int xCoordinate, int yCoordinate)
+	{
+		var square = SquareGridMap.Squares[xCoordinate, yCoordinate];
+
+		if (square.Configuration == 0)
+		{
+			return square.CenterTop.Position;
+		}
+
+		return null;
 	}
 
     private void CreateMeshFromPoints(params Node[] points)
