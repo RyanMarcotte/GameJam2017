@@ -16,6 +16,9 @@ public class MapGenerator : MonoBehaviour
 	public List<Room> SurvivingRooms;
 	public GameObject Player;
 	public GameObject Camera;
+	public GameObject Goal;
+	public GameObject HealthPickup;
+	public GameObject FuelPickup;
 
 	private Room _firstRoom;
 	private Room _lastRoom;
@@ -25,8 +28,10 @@ public class MapGenerator : MonoBehaviour
 	public int Height;
 	public int Width;
 	public int BorderSize = 5;
-	public int RegionThresholdSize = 50;
-	public int EmptyRegionThresholdSize = 50;
+	public int RegionThresholdSize = 15;
+	public int EmptyRegionThresholdSize = 10;
+	public int NumberOfHealthPickups = 10;
+	public int NumberOfFuelPickups = 15;
 	public string Seed;
 	public bool UseRandomSeed;
 
@@ -77,13 +82,106 @@ public class MapGenerator : MonoBehaviour
 		meshGenerator.GenerateMesh(borderedMap, 1);
 
 		DetermineSurvivingRoomsLandingPads(meshGenerator);
+
+		var usedWorldPosition = PositionStartAndGoalObjects();
+
+		if (HealthPickup == null || FuelPickup == null)
+			return;
+
+		PositionRemainingGameObjects(meshGenerator, usedWorldPosition);
+	}
+
+	private HashSet<Vector3> PositionStartAndGoalObjects()
+	{
+		var usedWorldPositions = new HashSet<Vector3>();
+
 		_firstRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).FirstOrDefault(x => x.LandingPadPosition != null);
 
-		if (_firstRoom == null || _firstRoom.LandingPadPosition == null)
-			return;
-		
+		if (_firstRoom == null || _firstRoom.LandingPadPosition == null || Player == null || Camera == null)
+			return null;
+		 
 		Player.gameObject.transform.position = _firstRoom.LandingPadPosition.Value;
+		usedWorldPositions.Add(new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, _firstRoom.LandingPadPosition.Value.z));
 		Camera.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, -10);
+
+		_lastRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).LastOrDefault(x => x.LandingPadPosition != null);
+
+		if (_lastRoom == null || _lastRoom.LandingPadPosition == null || Goal == null)
+			return null;
+
+		Goal.gameObject.transform.position = _lastRoom.LandingPadPosition.Value;
+		usedWorldPositions.Add(new Vector3(_lastRoom.LandingPadPosition.Value.x, _lastRoom.LandingPadPosition.Value.y, _lastRoom.LandingPadPosition.Value.z));
+
+		return usedWorldPositions;
+	}
+
+	private void PositionRemainingGameObjects(MeshGenerator meshGenerator, HashSet<Vector3> usedWorldPositions)
+	{
+		var roomsVisited = new HashSet<int>();
+
+		var RoomsLookup = SurvivingRooms.ToDictionary(x => x.RoomOrder, x => x);
+
+		if (usedWorldPositions == null)
+			usedWorldPositions = new HashSet<Vector3>();
+
+		var randomNumberGenerator = new System.Random();
+
+		for (int i = 0; i < NumberOfFuelPickups; i++)
+		{
+			int roomToPopulate;
+			do
+			{
+				roomToPopulate = (randomNumberGenerator.Next() % SurvivingRooms.Count) + 1;
+			} while (!RoomsLookup.ContainsKey(roomToPopulate) || (roomsVisited.Contains(roomToPopulate)));
+
+			var room = RoomsLookup[roomToPopulate];
+
+			Vector3? position;
+			do
+			{
+				var tile = room.EmptySpaceTiles[randomNumberGenerator.Next() % room.EmptySpaceTiles.Count];
+				position = meshGenerator.GetSquareNodePosition(tile.TileX, tile.TileY);
+
+			} while (position == null || usedWorldPositions.Contains(position.Value));
+
+
+			Instantiate(FuelPickup, new Vector3(position.Value.x, position.Value.y, position.Value.z), Quaternion.identity);
+			roomsVisited.Add(roomToPopulate);
+			usedWorldPositions.Add(position.Value);
+
+			if (roomsVisited.Count == SurvivingRooms.Count)
+				roomsVisited.Clear();
+		}
+
+		roomsVisited.Clear();
+
+		for (int i = 0; i < NumberOfHealthPickups; i++)
+		{
+			int roomToPopulate;
+			do
+			{
+				roomToPopulate = (randomNumberGenerator.Next() % SurvivingRooms.Count) + 1;
+			} while (!RoomsLookup.ContainsKey(roomToPopulate) || (roomsVisited.Contains(roomToPopulate)));
+
+			var room = RoomsLookup[roomToPopulate];
+
+			Vector3? position;
+			do
+			{
+				var tile = room.EmptySpaceTiles[randomNumberGenerator.Next() % room.EmptySpaceTiles.Count];
+				position = meshGenerator.GetSquareNodePosition(tile.TileX, tile.TileY);
+
+			} while (position == null || usedWorldPositions.Contains(position.Value));
+
+
+			Instantiate(HealthPickup, new Vector3(position.Value.x, position.Value.y, position.Value.z), Quaternion.identity);
+			roomsVisited.Add(roomToPopulate);
+			usedWorldPositions.Add(position.Value);
+
+			if (roomsVisited.Count == SurvivingRooms.Count)
+				roomsVisited.Clear();
+		}
+
 	}
 
 	public void FillMap()
@@ -422,7 +520,7 @@ public class MapGenerator : MonoBehaviour
 			{
 				if (foundLandingPad)
 					continue;
-				var result = meshGenerator.IsLandingPadSquare(tile.TileX, tile.TileY);
+				var result = meshGenerator.GetLandingPadPosition(tile.TileX, tile.TileY);
 
 				if(result != null)
 				{
@@ -455,6 +553,7 @@ public class Room : IComparable<Room>
 {
 	public List<Coordinate> Tiles;
 	public List<Coordinate> EdgeTiles;
+	public List<Coordinate> EmptySpaceTiles;
 	public List<Room> NeighbouringRooms;
 	public Vector3? LandingPadPosition;
 	public int RoomSize;
@@ -473,6 +572,7 @@ public class Room : IComparable<Room>
 		RoomOrder = roomOrder;
 		NeighbouringRooms = new List<Room>();
 		EdgeTiles = new List<Coordinate>();
+		EmptySpaceTiles = new List<Coordinate>();
 		
 		foreach(var tile in Tiles)
 		{
@@ -483,6 +583,10 @@ public class Room : IComparable<Room>
 					if((x == tile.TileX || y == tile.TileY) && map[x, y] == (int)MapFillValues.FillSpace)
 					{
 						EdgeTiles.Add(tile);
+					}
+					else if((x == tile.TileX || y == tile.TileY) && map[x, y] == (int)MapFillValues.EmptySpace)
+					{
+						EmptySpaceTiles.Add(tile);
 					}
 				}
 			}
