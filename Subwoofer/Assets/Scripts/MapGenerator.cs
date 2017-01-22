@@ -16,6 +16,7 @@ public class MapGenerator : MonoBehaviour
 	public List<Room> SurvivingRooms;
 	public GameObject Player;
 	public GameObject Camera;
+	public GameObject Goal;
 
 	private Room _firstRoom;
 	private Room _lastRoom;
@@ -77,13 +78,25 @@ public class MapGenerator : MonoBehaviour
 		meshGenerator.GenerateMesh(borderedMap, 1);
 
 		DetermineSurvivingRoomsLandingPads(meshGenerator);
+		PositionGameObjects();
+	}
+
+	private void PositionGameObjects()
+	{
 		_firstRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).FirstOrDefault(x => x.LandingPadPosition != null);
 
-		if (_firstRoom == null || _firstRoom.LandingPadPosition == null)
+		if (_firstRoom == null || _firstRoom.LandingPadPosition == null || Player == null || Camera == null)
 			return;
-		
+
 		Player.gameObject.transform.position = _firstRoom.LandingPadPosition.Value;
 		Camera.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, -10);
+
+		_lastRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).LastOrDefault(x => x.LandingPadPosition != null);
+
+		if (_lastRoom == null || _lastRoom.LandingPadPosition == null || Goal == null)
+			return;
+
+		Goal.gameObject.transform.position = _lastRoom.LandingPadPosition.Value;
 	}
 
 	public void FillMap()
