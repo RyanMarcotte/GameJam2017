@@ -26,8 +26,10 @@ public class MapGenerator : MonoBehaviour
 	public int Height;
 	public int Width;
 	public int BorderSize = 5;
-	public int RegionThresholdSize = 50;
-	public int EmptyRegionThresholdSize = 50;
+	public int RegionThresholdSize = 15;
+	public int EmptyRegionThresholdSize = 10;
+	public int NumberOfHealthPickups = 10;
+	public int NumberOfFuelPickups = 15;
 	public string Seed;
 	public bool UseRandomSeed;
 
