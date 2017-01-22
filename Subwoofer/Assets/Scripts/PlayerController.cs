@@ -368,7 +368,7 @@ public class PlayerController : MonoBehaviour
 		EnergyRemainingText.color = GetPercentageColor(energyRemainingPercentage, new Color(0f, 0.75f, 1f), new Color(0f, 0.5f, 1f), new Color(0f, 0f, 1f));
 
 		RaycastHit hit;
-	    if (RemainingHealth > 0 && Physics.Raycast(transform.position, Vector3.down, out hit, 4f))
+	    if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && Physics.Raycast(transform.position, Vector3.down, out hit, 4f))
 	    {
 		    if (ShipRotationIsWithinVerticalLimit && hit.normal == Vector3.up)
 		    {
