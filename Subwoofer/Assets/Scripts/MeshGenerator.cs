@@ -199,7 +199,7 @@ public class MeshGenerator : MonoBehaviour
 	{
 		var square = SquareGridMap.Squares[xCoordinate, yCoordinate];
 
-		return square.Configuration == 3;
+		return square.Configuration == 8;
 
 	}
 
