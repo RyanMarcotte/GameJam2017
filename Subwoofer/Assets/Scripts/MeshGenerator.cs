@@ -22,6 +22,7 @@ public class MeshGenerator : MonoBehaviour
         Outlines.Clear();
         Vertices.Clear();
         TriangleDictionary.Clear();
+		CheckedVertices.Clear();
 
         this.SquareGridMap = new SquareGrid(map, squareSize);
 
@@ -87,9 +88,13 @@ public class MeshGenerator : MonoBehaviour
 
         wallMesh.vertices = wallVertices.ToArray();
         wallMesh.triangles = wallTriangles.ToArray();
+
+		Walls.mesh.Clear();
         Walls.mesh = wallMesh;
 
         var wallCollider = Walls.gameObject.AddComponent<MeshCollider>();
+
+		wallCollider.sharedMesh.Clear();
         wallCollider.sharedMesh = wallMesh;
     }
 
@@ -428,12 +433,12 @@ public class SquareNode
         if (BottomLeft.IsActive)
             Configuration += 1;
     }
-
 }
 
 public class SquareGrid
 {
     public SquareNode[,] Squares;
+	public List<SquareNode> EmptySquares;
 
     public SquareGrid(int[,] map, float squareSize)
     {
@@ -454,12 +459,16 @@ public class SquareGrid
         }
 
         Squares = new SquareNode[(nodeCountX - 1), (nodeCountY - 1)];
+		EmptySquares = new List<SquareNode>();
 
-        for (int x = 0; x < (nodeCountX - 1); x++)
+		for (int x = 0; x < (nodeCountX - 1); x++)
         {
             for (int y = 0; y < (nodeCountY - 1); y++)
             {
                 Squares[x, y] = new SquareNode(controlNodes[x, (y + 1)], controlNodes[(x + 1), (y + 1)], controlNodes[(x + 1), y], controlNodes[x, y]);
+
+				if (Squares[x, y].Configuration == 0)
+					EmptySquares.Add(Squares[x, y]);
             }
         }
     }

@@ -186,10 +186,12 @@ public class MapGenerator : MonoBehaviour
 
 	public void FillMap()
 	{
-		if (UseRandomSeed)
-			Seed = Time.time.ToString();
+		System.Random pseudoRandomNumberGenerator;
 
-		var pseudoRandomNumberGenerator = new System.Random(Seed.GetHashCode());
+		if (UseRandomSeed)
+			pseudoRandomNumberGenerator = new System.Random(Seed.GetHashCode());
+		else
+			pseudoRandomNumberGenerator = new System.Random();
 
 		for (int x = 0; x < Width; x++)
 		{
