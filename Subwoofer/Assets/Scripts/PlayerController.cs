@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
 	private const int MAXIMUM_HEALTH = 1000;
-	private const int MAXIMUM_FUEL = 1000;
+	private const int MAXIMUM_FUEL = 2000;
 
 	private const char UI_CHARACTER = '|';
 	private const int UI_SCALE = 2;
@@ -90,7 +90,7 @@ public class PlayerController : MonoBehaviour
     void Start ()
     {
 		ThrustersEngaged = false;
-	    RemainingHealth = MaximumHealth;
+	    RemainingHealth = MaximumHealth / 2;
 	    RemainingFuel = MaximumFuel;
 	    UpdateUI();
 
@@ -229,10 +229,10 @@ public class PlayerController : MonoBehaviour
     void OnTriggerEnter(Collider pickup)
     {
         //Fuel
-        if(pickup.tag == "Fuel")
-        {
+        if (pickup.tag == "Fuel")
             RemainingFuel = MaximumFuel;
-        }
+        else
+            RemainingHealth = (RemainingHealth > MaximumHealth * 2 / 3 ? MaximumHealth : RemainingHealth + MaximumHealth / 3);
 
         //Health
         pickup.gameObject.SetActive(false);
