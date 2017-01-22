@@ -21,14 +21,10 @@ public class Sonar : MonoBehaviour
 
     public float maskCutawayDst = .1f;
 
-    public MeshFilter viewMeshFilter;
-    Mesh viewMesh;
+    public GameObject sonarMeshPrefab;
 
     void Start()
     {
-        viewMesh = new Mesh();
-        viewMesh.name = "View Mesh";
-        viewMeshFilter.mesh = viewMesh;
 
         StartCoroutine("FindTargetsWithDelay", .2f);
     }
@@ -45,9 +41,26 @@ public class Sonar : MonoBehaviour
 
     void LateUpdate()
     {
-        DrawSonar();
+        if (Input.GetKeyDown("space"))
+        {
+            var mesh = DrawSonar();
+            var instance = GameObject.Instantiate(sonarMeshPrefab);
+            instance.GetComponent<MeshFilter>().mesh = mesh;
+            instance.GetComponent<FadeBehaviour>().Fade();
+            instance.transform.position = transform.position;
+            instance.transform.rotation = transform.rotation;
+            //StartCoroutine("ModifySonarAndClear", 1f);
+        }
     }
-    
+
+    //IEnumerator ModifySonarAndClear(float delay)
+    //{
+    //    viewMeshFilter.GetComponent<FadeBehaviour>().Fade();
+
+    //    yield return new WaitForSeconds(delay);
+    //    viewMesh.Clear();
+    //}
+
 
     void FindVisibleTargets()
     {
@@ -69,7 +82,7 @@ public class Sonar : MonoBehaviour
         }
     }
 
-    void DrawSonar()
+    Mesh DrawSonar()
     {
         int stepCount = Mathf.RoundToInt(viewAngle * meshResolution);
         float stepAngleSize = viewAngle / stepCount;
@@ -120,11 +133,14 @@ public class Sonar : MonoBehaviour
             }
         }
 
-        viewMesh.Clear();
+        var viewMesh = new Mesh();
+        viewMesh.name = "View Mesh";
 
         viewMesh.vertices = vertices;
         viewMesh.triangles = triangles;
         viewMesh.RecalculateNormals();
+
+        return viewMesh;
     }
 
 
