@@ -18,11 +18,19 @@ public class PlayerController : MonoBehaviour
 	private const float ROTATION_SPEED = 5f;
 	private const int MAXIMUM_HEALTH = 20000;
     private const int MAXIMUM_FUEL = 20000;
+	private const int MAXIMUM_ENERGY = 250;
+	private const int CONE_SHOT_ENERGY_REQUIREMENT = 1;
+	private const int CONE_SHOT_BEAM_ANGLE_IN_DEGREES = 90;
+	private const float CONE_SHOT_BEAM_LENGTH = 4.5f*3;
+	private const int ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT = 5;
+	private const int ALL_DIRECTION_SHOT_BEAM_ANGLE_IN_DEGREES = 360;
+	private const float ALL_DIRECTION_SHOT_BEAM_LENGTH = 2.25f*3;
 
 	private const char UI_CHARACTER = '|';
 	private const int UI_SCALE = 2;
 	private const string HEALTH_REMAINING_TEXT_FORMAT = "HEALTH : {0}";
 	private const string FUEL_REMAINING_TEXT_FORMAT = "FUEL   : {0}";
+	private const string ENERGY_REMAINING_TEXT_FORMAT = "ENERGY : {0}";
 
 	//Use of rigid body allows the physics engine to apply
 	private readonly System.Random _rng = new System.Random();
@@ -31,11 +39,13 @@ public class PlayerController : MonoBehaviour
 	private IEnumerable<SpriteRenderer> _spaceshipThrusterSpriteRenderers;
 	private AudioSource _spaceshipThrusterAudioSource;
 	private IEnumerable<AudioSource> _spaceshipWallCollisionAudioSourceCollection;
+	private IEnumerable<AudioSource> _spaceshipShotAudioSourceCollection;
 	private AudioSource _spaceshipExplosionAudioSource;
 	private AudioSource _healthPickupAudioSource;
 	private AudioSource _fuelPickupAudioSource;
 	private AudioSource _objectivePickupAudioSource;
 	private AutomaticRotation _deathRotation = AutomaticRotation.None;
+	private Sonar _spaceshipSonar;
 
     //UI Text
 	public Text HealthRemainingText;
@@ -70,6 +80,7 @@ public class PlayerController : MonoBehaviour
 
 	private int _remainingHealth;
 	private int _remainingFuel;
+	private int _remainingEnergy;
 	private float _shipRotation;
 
 	/// <summary>
@@ -101,6 +112,26 @@ public class PlayerController : MonoBehaviour
 	/// </summary>
 	public int MaximumFuel { get { return MAXIMUM_FUEL; } }
 
+	/// <summary>
+	/// Indicates if the player has enough energy to fire a cone shot.
+	/// </summary>
+	public bool HasEnoughEnergyForConeShot { get { return _remainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT; } }
+
+	/// <summary>
+	/// Indicates if the player has enough energy to fire an all-direction shot.
+	/// </summary>
+	public bool HasEnoughEnergyForAllDirectionShot { get { return _remainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT; } }
+
+	/// <summary>
+	/// Gets the amount of remaining energy.
+	/// </summary>
+	public int RemainingEnergy { get { return _remainingEnergy > 0 ? _remainingEnergy : 0; } private set { _remainingEnergy = value; } }
+
+	/// <summary>
+	/// Gets the maximum energy capacity.
+	/// </summary>
+	public int MaximumEnergy { get { return MAXIMUM_ENERGY; } }
+
     //The start function runs once at the beginning of the game
     public void Start ()
     {
@@ -108,6 +139,7 @@ public class PlayerController : MonoBehaviour
 		ThrustersEngaged = false;
 	    RemainingHealth = MaximumHealth;
 	    RemainingFuel = MaximumFuel;
+	    RemainingEnergy = MaximumEnergy;
 
         //Update the UI and hide menu
 	    UpdateUI();
@@ -119,11 +151,13 @@ public class PlayerController : MonoBehaviour
         //Spaceship image renderers
 	    _spaceshipSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		_spaceshipThrusterSpriteRenderers = FindObjectsOfType<SpriteRenderer>().Where(x => x.name.ToLower().Contains("thruster"));
-	    
+	    _spaceshipSonar = GetComponentInChildren<Sonar>();
+
         //Obtain audio sources
 		var allAudioSources = GetComponentsInChildren<AudioSource>();
 	    _spaceshipThrusterAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipThrusterLoop") == 0);
 	    _spaceshipWallCollisionAudioSourceCollection = allAudioSources.Where(x => x.clip.name.ToLower().Contains("hitwall"));
+		_spaceshipShotAudioSourceCollection = allAudioSources.Where(x => x.clip.name.ToLower().Contains("waveshot"));
 		_spaceshipExplosionAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipExplosion") == 0);
 		_healthPickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectHealth") == 0);
 		_fuelPickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectFuel") == 0);
@@ -131,28 +165,32 @@ public class PlayerController : MonoBehaviour
 	}
 	
 	//The update function runs each frame
-	void FixedUpdate ()
+	void FixedUpdate()
 	{
 		UpdateUI();
 
 		//Handle death
 		if (RemainingHealth <= 0)
-		{            
-            _spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
-            foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
-                spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
-            _spaceshipThrusterAudioSource.mute = true;
-            _rigidBody.velocity = Vector3.zero;
+		{
+			_spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
+			foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
+				spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
+			_spaceshipThrusterAudioSource.mute = true;
+			_rigidBody.velocity = Vector3.zero;
 			return;
 		}
 
-        //Handle victory
-        if(VictoryText.text == "YOU WIN")
-        {
-            _rigidBody.velocity = Vector3.zero;
+		//Handle victory
+		if (VictoryText.text == "YOU WIN")
+		{
+			_rigidBody.velocity = Vector3.zero;
 			_spaceshipThrusterAudioSource.mute = true;
-            Menu.gameObject.SetActive(true);
-        }
+			Menu.gameObject.SetActive(true);
+			return;
+		}
+
+		if (RemainingEnergy < MaximumEnergy)
+			_remainingEnergy++;
 
 		// obtain the movements
 		// (if there is no fuel, disable thrusters)
@@ -163,7 +201,7 @@ public class PlayerController : MonoBehaviour
 		ThrustersEngaged = (Math.Abs(inputY) > float.Epsilon);
 		bool hadFuel = RemainingFuel > 0;
 		RemainingFuel -= ThrustersEngaged ? 5 : 1;
-		
+
 		if (hadFuel && RemainingFuel <= 0)
 		{
 			if (ShipRotation > 0 && ShipRotation < 180)
@@ -181,7 +219,7 @@ public class PlayerController : MonoBehaviour
 			{
 				case AutomaticRotation.None:
 					inputX = 0;
-				break;
+					break;
 				case AutomaticRotation.Left:
 					inputX = -1;
 					break;
@@ -195,7 +233,7 @@ public class PlayerController : MonoBehaviour
 
 		// if ship is pointing straight up and not moving, then we are likely sitting on the ground...
 		// do not allow rotation
-		if (Math.Abs(ShipRotation) < float.Epsilon && ((int)_rigidBody.velocity.magnitude * 2) == 0)
+		if (Math.Abs(ShipRotation) < float.Epsilon && ((int)_rigidBody.velocity.magnitude*2) == 0)
 			inputX = 0;
 
 		// apply thrust and rotation
@@ -231,9 +269,22 @@ public class PlayerController : MonoBehaviour
 			_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 		else
 			_spaceshipThrusterAudioSource.mute = true;
+
+		if (RemainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown("space"))
+		{
+			_spaceshipShotAudioSourceCollection.ElementAt(0).Play();
+			RemainingEnergy -= CONE_SHOT_ENERGY_REQUIREMENT;
+			_spaceshipSonar.CreateSonarMesh(90, 4.5f * 3);
+		}
+		else if (RemainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown(KeyCode.LeftControl))
+		{
+			_spaceshipShotAudioSourceCollection.ElementAt(1).Play();
+			RemainingEnergy -= ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT;
+			_spaceshipSonar.CreateSonarMesh(360, 2.25f * 3);
+		}
 	}
 
-    /// <summary>
+	/// <summary>
     /// Handle collisions with wall
     /// </summary>
     void OnCollisionEnter(Collision other)
@@ -299,7 +350,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //Remove the pickup
-        pickup.gameObject.SetActive(false);
+	    Destroy(pickup.gameObject);
     }
 
 
@@ -315,6 +366,11 @@ public class PlayerController : MonoBehaviour
 		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
 		FuelRemainingText.color = GetPercentageColor(fuelRemainingPercentage);
 
+	    int energyRemainingPercentage = GetPercentage(RemainingEnergy, MaximumEnergy);
+	    EnergyRemainingText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, energyRemainingPercentage/UI_SCALE));
+	    EnergyRemainingBackendText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
+	    FuelRemainingText.color = GetPercentageColor(energyRemainingPercentage);
+
 		if (RemainingHealth <= 0)
 			GameOverText.text = "GAME OVER";
 	}
@@ -327,10 +383,15 @@ public class PlayerController : MonoBehaviour
 
 	private static Color GetPercentageColor(float percentage)
 	{
-		if (percentage > 66.6f)
-			return Color.green;
+		return GetPercentageColor(percentage, Color.green, Color.yellow, Color.red);
+	}
 
-		return percentage > 33.3f ? Color.yellow : Color.red;
+	private static Color GetPercentageColor(float percentage, Color full, Color medium, Color low)
+	{
+		if (percentage > 66.6f)
+			return full;
+
+		return percentage > 33.3f ? medium : low;
 	}
 }
 
