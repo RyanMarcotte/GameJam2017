@@ -17,18 +17,6 @@ public class Sonar : MonoBehaviour
 
     public GameObject sonarMeshPrefab;
 
-    void LateUpdate()
-    {
-		if (Input.GetKeyDown("space"))
-        {
-			CreateSonarMesh(90, 4.5f * 3);
-        }
-        if (Input.GetKeyDown(KeyCode.LeftControl))
-        {
-			CreateSonarMesh(360, 2.25f * 3);
-		}
-    }
-
 	public void CreateSonarMesh(int beamSpanInDegrees, float beamLength)
 	{
 		var mesh = DrawSonar(beamSpanInDegrees, beamLength);
