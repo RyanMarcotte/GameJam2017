@@ -16,8 +16,8 @@ public class PlayerController : MonoBehaviour
 
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
-	private const int MAXIMUM_HEALTH = 2000;
-	private const int MAXIMUM_FUEL = int.MaxValue;
+	private const int MAXIMUM_HEALTH = int.MaxValue;
+    private const int MAXIMUM_FUEL = int.MaxValue;
 
 	private const char UI_CHARACTER = '|';
 	private const int UI_SCALE = 2;
@@ -43,6 +43,7 @@ public class PlayerController : MonoBehaviour
     public Text FuelRemainingText;
 	public Text FuelRemainingBackendText;
     public Text GameOverText;
+    public Text VictoryText;
 
 	/// <summary>
 	/// Gets the ship's rotation.
@@ -122,17 +123,28 @@ public class PlayerController : MonoBehaviour
 	{
 		UpdateUI();
 
-		// do not move player (and hide them) if they have no health
-		if (RemainingHealth <= 0)
+		//Handle death and victory
+		if (RemainingHealth <= 0 || VictoryText.text == "YOU WIN")
 		{
-			_rigidBody.velocity = Vector3.zero;
-			_spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
-			foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
-				spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
+            //Death specific changes
+            if (VictoryText.text != "YOU WIN")
+            {                
+                _spaceshipSpriteRenderer.color = _spaceshipSpriteRenderer.color.ToNotVisible();
+                foreach (var spaceshipTrusterSpriteRenderer in _spaceshipThrusterSpriteRenderers)
+                    spaceshipTrusterSpriteRenderer.color = spaceshipTrusterSpriteRenderer.color.ToNotVisible();
+                _spaceshipThrusterAudioSource.mute = true;
+            }
 
-			_spaceshipThrusterAudioSource.mute = true;
+            //Victory and death changes
+            _rigidBody.velocity = Vector3.zero;
 			return;
 		}
+
+        if(VictoryText.text != "")
+        {
+            _spaceshipThrusterAudioSource.mute = true;
+            return;
+        }
 
 		// obtain the movements
 		// (if there is no fuel, disable thrusters)
@@ -275,9 +287,10 @@ public class PlayerController : MonoBehaviour
 		else if (pickup.tag == "Goal")
 		{
 			_objectivePickupAudioSource.PlayOneShot(_objectivePickupAudioSource.clip, 1);
-		}
+            VictoryText.text = "YOU WIN!";
+        }
 
-        //Health
+        //Remove the pickup
         pickup.gameObject.SetActive(false);
     }
 
