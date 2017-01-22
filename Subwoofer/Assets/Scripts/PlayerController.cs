@@ -16,8 +16,8 @@ public class PlayerController : MonoBehaviour
 
 	private const float THRUST_SPEED = 30.5f;
 	private const float ROTATION_SPEED = 5f;
-	private const int MAXIMUM_HEALTH = 1000;
-	private const int MAXIMUM_FUEL = 2000;
+	private const int MAXIMUM_HEALTH = 2000;
+	private const int MAXIMUM_FUEL = int.MaxValue;
 
 	private const char UI_CHARACTER = '|';
 	private const int UI_SCALE = 2;
