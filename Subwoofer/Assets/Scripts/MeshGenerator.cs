@@ -40,7 +40,6 @@ public class MeshGenerator : MonoBehaviour
 		}
 
 		var mesh = new Mesh();
-		//Cave.mesh.Clear();
 		Cave.mesh = mesh;
 
 		mesh.vertices = Vertices.ToArray();
@@ -92,12 +91,10 @@ public class MeshGenerator : MonoBehaviour
 		wallMesh.vertices = wallVertices.ToArray();
 		wallMesh.triangles = wallTriangles.ToArray();
 
-		//Walls.mesh.Clear();
 		Walls.mesh = wallMesh;
 
 		var wallCollider = Walls.gameObject.AddComponent<MeshCollider>();
 
-		//wallCollider.sharedMesh.Clear();
 		wallCollider.sharedMesh = wallMesh;
 	}
 

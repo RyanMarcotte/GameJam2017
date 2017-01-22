@@ -109,7 +109,11 @@ public class MapGenerator : MonoBehaviour
 		if (_lastRoom == null || _lastRoom.LandingPadPosition == null || Goal == null)
 			return null;
 
-		Goal.gameObject.transform.position = new Vector3(_lastRoom.LandingPadPosition.Value.x, _lastRoom.LandingPadPosition.Value.y, Player.gameObject.transform.position.z);
+		if (SurvivingRooms.Count == 1)
+			Goal.gameObject.transform.position = new Vector3(_lastRoom.FinishLandingPadPosition.Value.x, _lastRoom.FinishLandingPadPosition.Value.y, Player.gameObject.transform.position.z);
+		else
+			Goal.gameObject.transform.position = new Vector3(_lastRoom.LandingPadPosition.Value.x, _lastRoom.LandingPadPosition.Value.y, Player.gameObject.transform.position.z);
+
 		usedWorldPositions.Add(Goal.gameObject.transform.position);
 
 		return usedWorldPositions;
@@ -392,11 +396,6 @@ public class MapGenerator : MonoBehaviour
 		return line;
 	}
 
-	public Vector3 CoordinateToWorldPoint(Coordinate tile)
-	{
-		return new Vector3(-Width / 2 + 0.5f + tile.TileX, -Height / 2 + 0.5f + tile.TileY, 0);
-	}
-
 	public List<Coordinate> GetRegionTiles(int startX, int startY)
 	{
 		var tiles = new List<Coordinate>();
@@ -430,7 +429,7 @@ public class MapGenerator : MonoBehaviour
 		return tiles;
 	}
 
-	List<List<Coordinate>> GetRegions(int tileType)
+	private List<List<Coordinate>> GetRegions(int tileType)
 	{
 		var regions = new List<List<Coordinate>>();
 		var mapFlags = new bool[Width, Height];
@@ -468,14 +467,17 @@ public class MapGenerator : MonoBehaviour
 
 			foreach (var tile in room.EdgeTiles)
 			{
-				if (foundLandingPad)
-					continue;
 				var result = meshGenerator.GetLandingPadPosition(tile.TileX, tile.TileY);
 
 				if(result != null)
 				{
-					foundLandingPad = true;
-					room.LandingPadPosition = result.Value;
+					if (!foundLandingPad)
+					{
+						foundLandingPad = true;
+						room.LandingPadPosition = result.Value;
+					}
+
+					room.FinishLandingPadPosition = result.Value;
 				}
 			}
 		}
@@ -506,6 +508,7 @@ public class Room : IComparable<Room>
 	public List<Coordinate> EmptySpaceTiles;
 	public List<Room> NeighbouringRooms;
 	public Vector3? LandingPadPosition;
+	public Vector3? FinishLandingPadPosition;
 	public int RoomSize;
 	public int RoomOrder = 0;
 	public bool IsAccessibleFromMainRoom;
