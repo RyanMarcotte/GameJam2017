@@ -6,6 +6,6 @@ public class GoalAnimator : MonoBehaviour
 {
     void FixedUpdate()
     {
-        transform.Rotate(0, 0, Time.fixedDeltaTime * 90);
+        transform.Rotate(0, Time.fixedDeltaTime * 90, 0);
     }
 }
