@@ -100,7 +100,7 @@ public class MapGenerator : MonoBehaviour
 		if (_firstRoom == null || _firstRoom.LandingPadPosition == null || Player == null || Camera == null)
 			return null;
 		 
-		Player.gameObject.transform.position = _firstRoom.LandingPadPosition.Value;
+		Player.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, Player.gameObject.transform.position.z);
 		usedWorldPositions.Add(new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, _firstRoom.LandingPadPosition.Value.z));
 		Camera.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, -10);
 
@@ -145,7 +145,7 @@ public class MapGenerator : MonoBehaviour
 			} while (position == null || usedWorldPositions.Contains(position.Value));
 
 
-			Instantiate(FuelPickup, new Vector3(position.Value.x, position.Value.y, position.Value.z), Quaternion.identity);
+			Instantiate(FuelPickup, new Vector3(position.Value.x, position.Value.y, Player.transform.position.z), Quaternion.identity);
 			roomsVisited.Add(roomToPopulate);
 			usedWorldPositions.Add(position.Value);
 
@@ -174,7 +174,7 @@ public class MapGenerator : MonoBehaviour
 			} while (position == null || usedWorldPositions.Contains(position.Value));
 
 
-			Instantiate(HealthPickup, new Vector3(position.Value.x, position.Value.y, position.Value.z), Quaternion.identity);
+			Instantiate(HealthPickup, new Vector3(position.Value.x, position.Value.y, Player.transform.position.z), Quaternion.identity);
 			roomsVisited.Add(roomToPopulate);
 			usedWorldPositions.Add(position.Value);
 
