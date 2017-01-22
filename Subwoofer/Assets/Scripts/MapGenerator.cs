@@ -117,79 +117,29 @@ public class MapGenerator : MonoBehaviour
 
 	private void PositionRemainingGameObjects(MeshGenerator meshGenerator, HashSet<Vector3> usedWorldPositions)
 	{
-		var roomsVisited = new HashSet<int>();
+		var fuelPositions = meshGenerator.GetDistributedSquareNodePosition(NumberOfFuelPickups);
 
-		var RoomsLookup = SurvivingRooms.ToDictionary(x => x.RoomOrder, x => x);
-
-		if (usedWorldPositions == null)
-			usedWorldPositions = new HashSet<Vector3>();
-
-		var randomNumberGenerator = new System.Random();
-
-		for (int i = 0; i < NumberOfFuelPickups; i++)
+		foreach (var fuelPosition in fuelPositions)
 		{
-			int roomToPopulate;
-			do
-			{
-				roomToPopulate = (randomNumberGenerator.Next() % SurvivingRooms.Count) + 1;
-			} while (!RoomsLookup.ContainsKey(roomToPopulate) || (roomsVisited.Contains(roomToPopulate)));
-
-			var room = RoomsLookup[roomToPopulate];
-
-			Vector3? position;
-			do
-			{
-				var tile = room.EmptySpaceTiles[randomNumberGenerator.Next() % room.EmptySpaceTiles.Count];
-				position = meshGenerator.GetSquareNodePosition(tile.TileX, tile.TileY);
-
-			} while (position == null || usedWorldPositions.Contains(position.Value));
-
-
-			Instantiate(FuelPickup, new Vector3(position.Value.x, position.Value.y, Player.transform.position.z), Quaternion.identity);
-			roomsVisited.Add(roomToPopulate);
-			usedWorldPositions.Add(position.Value);
-
-			if (roomsVisited.Count == SurvivingRooms.Count)
-				roomsVisited.Clear();
+			Instantiate(FuelPickup, new Vector3(fuelPosition.x, fuelPosition.y, Player.transform.position.z), Quaternion.identity);
 		}
 
-		roomsVisited.Clear();
+		var healthPositions = meshGenerator.GetDistributedSquareNodePosition(NumberOfHealthPickups);
 
-		for (int i = 0; i < NumberOfHealthPickups; i++)
+		foreach (var healthPosition in healthPositions)
 		{
-			int roomToPopulate;
-			do
-			{
-				roomToPopulate = (randomNumberGenerator.Next() % SurvivingRooms.Count) + 1;
-			} while (!RoomsLookup.ContainsKey(roomToPopulate) || (roomsVisited.Contains(roomToPopulate)));
-
-			var room = RoomsLookup[roomToPopulate];
-
-			Vector3? position;
-			do
-			{
-				var tile = room.EmptySpaceTiles[randomNumberGenerator.Next() % room.EmptySpaceTiles.Count];
-				position = meshGenerator.GetSquareNodePosition(tile.TileX, tile.TileY);
-
-			} while (position == null || usedWorldPositions.Contains(position.Value));
-
-
-			Instantiate(HealthPickup, new Vector3(position.Value.x, position.Value.y, Player.transform.position.z), Quaternion.identity);
-			roomsVisited.Add(roomToPopulate);
-			usedWorldPositions.Add(position.Value);
-
-			if (roomsVisited.Count == SurvivingRooms.Count)
-				roomsVisited.Clear();
+			Instantiate(HealthPickup, new Vector3(healthPosition.x, healthPosition.y, Player.transform.position.z), Quaternion.identity);
 		}
-
 	}
 
 	public void FillMap()
 	{
-		if (UseRandomSeed)
-			Seed = Time.time.ToString();
+		System.Random pseudoRandomNumberGenerator;
 
-		var pseudoRandomNumberGenerator = new System.Random(Seed.GetHashCode());
+		if (UseRandomSeed)
+			pseudoRandomNumberGenerator = new System.Random();
+		else
+			pseudoRandomNumberGenerator = new System.Random(Seed.GetHashCode());
 
 		for (int x = 0; x < Width; x++)
 		{
