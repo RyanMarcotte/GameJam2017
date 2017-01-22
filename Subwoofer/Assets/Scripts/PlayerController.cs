@@ -253,8 +253,11 @@ public class PlayerController : MonoBehaviour
 
 		var hidden = new Color(1, 1, 1, 0);
 		var shown = new Color(1, 1, 1, 1);
-		foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
-			spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name) ? shown : hidden;
+		if (_spaceshipThrusterSpriteRenderers != null)
+		{
+			foreach (var spriteRenderer in _spaceshipThrusterSpriteRenderers)
+				spriteRenderer.color = thrustersThatAreOn.Contains(spriteRenderer.name) ? shown : hidden;
+		}
 
 		if (RemainingHealth > 0 && RemainingFuel > 0)
 			_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
@@ -367,7 +370,7 @@ public class PlayerController : MonoBehaviour
 		RaycastHit hit;
 	    if (RemainingHealth > 0 && Physics.Raycast(transform.position, Vector3.down, out hit, 4f))
 	    {
-		    if (ShipRotationIsWithinVerticalLimit)
+		    if (ShipRotationIsWithinVerticalLimit && hit.normal == Vector3.up)
 		    {
 			    LandingText.text = "LAND";
 			    LandingText.color = Color.green;
