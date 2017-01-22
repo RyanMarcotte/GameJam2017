@@ -22,6 +22,7 @@ public class MeshGenerator : MonoBehaviour
         Outlines.Clear();
         Vertices.Clear();
         TriangleDictionary.Clear();
+        CheckedVertices.Clear();
 
         this.SquareGridMap = new SquareGrid(map, squareSize);
 

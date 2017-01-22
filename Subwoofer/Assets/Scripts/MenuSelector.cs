@@ -11,7 +11,7 @@ public class MenuSelector : MonoBehaviour
     {
         //Restart the game!
         player.GetComponent<PlayerController>().Start();
-        map.GetComponent<MapGenerator>().GenerateMap();
+        //map.GetComponent<MapGenerator>().GenerateMap();
     }
 
     public void exitGame()

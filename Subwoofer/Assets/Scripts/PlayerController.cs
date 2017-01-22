@@ -134,7 +134,7 @@ public class PlayerController : MonoBehaviour
 
         //Update the UI and hide menu
 	    UpdateUI();
-        //Menu.gameObject.SetActive(false);
+        Menu.gameObject.SetActive(false);
 
         //Get the rigid body
         _rigidBody = GetComponent<Rigidbody>();
