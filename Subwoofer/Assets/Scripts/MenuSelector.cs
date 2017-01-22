@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MenuSelector : MonoBehaviour
 {
@@ -9,9 +10,13 @@ public class MenuSelector : MonoBehaviour
 
     public void playAgain()
     {
-        //Restart the game!
-        player.GetComponent<PlayerController>().Start();
-        //map.GetComponent<MapGenerator>().GenerateMap();
+	    var currentScene = SceneManager.GetActiveScene();
+		SceneManager.LoadScene("Subwoofer");
+	    SceneManager.UnloadSceneAsync(currentScene);
+
+	    //Restart the game!
+	    //player.GetComponent<PlayerController>().Start();
+	    //map.GetComponent<MapGenerator>().GenerateMap();
     }
 
     public void exitGame()
