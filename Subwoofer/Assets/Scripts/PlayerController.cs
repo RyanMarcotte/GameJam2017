@@ -34,6 +34,7 @@ public class PlayerController : MonoBehaviour
 	private AudioSource _spaceshipExplosionAudioSource;
 	private AudioSource _healthPickupAudioSource;
 	private AudioSource _fuelPickupAudioSource;
+	private AudioSource _objectivePickupAudioSource;
 	private AutomaticRotation _deathRotation = AutomaticRotation.None;
 
     //UI Text
@@ -113,7 +114,8 @@ public class PlayerController : MonoBehaviour
 		_spaceshipExplosionAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "spaceshipExplosion") == 0);
 		_healthPickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectHealth") == 0);
 		_fuelPickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectFuel") == 0);
-    }
+		_objectivePickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectObjective") == 0);
+	}
 	
 	//The update function runs each frame
 	void FixedUpdate ()
