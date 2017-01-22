@@ -113,16 +113,6 @@ public class PlayerController : MonoBehaviour
 	public int MaximumFuel { get { return MAXIMUM_FUEL; } }
 
 	/// <summary>
-	/// Indicates if the player has enough energy to fire a cone shot.
-	/// </summary>
-	public bool HasEnoughEnergyForConeShot { get { return _remainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT; } }
-
-	/// <summary>
-	/// Indicates if the player has enough energy to fire an all-direction shot.
-	/// </summary>
-	public bool HasEnoughEnergyForAllDirectionShot { get { return _remainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT; } }
-
-	/// <summary>
 	/// Gets the amount of remaining energy.
 	/// </summary>
 	public int RemainingEnergy { get { return _remainingEnergy > 0 ? _remainingEnergy : 0; } private set { _remainingEnergy = value; } }
@@ -364,12 +354,12 @@ public class PlayerController : MonoBehaviour
 		int fuelRemainingPercentage = GetPercentage(RemainingFuel, MaximumFuel);
 		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, fuelRemainingPercentage/UI_SCALE));
 		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
-		FuelRemainingText.color = GetPercentageColor(fuelRemainingPercentage);
+		FuelRemainingText.color = GetPercentageColor(fuelRemainingPercentage, new Color(1f, 0.5f, 0f), new Color(1f, 0.25f, 0), new Color(1f, 0f, 0f));
 
 	    int energyRemainingPercentage = GetPercentage(RemainingEnergy, MaximumEnergy);
 	    EnergyRemainingText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, energyRemainingPercentage/UI_SCALE));
 	    EnergyRemainingBackendText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
-		EnergyRemainingText.color = GetPercentageColor(energyRemainingPercentage);
+		EnergyRemainingText.color = GetPercentageColor(energyRemainingPercentage, new Color(0f, 0.75f, 1f), new Color(0f, 0.5f, 1f), new Color(0f, 0f, 1f));
 
 		if (RemainingHealth <= 0)
 			GameOverText.text = "GAME OVER";
@@ -388,10 +378,10 @@ public class PlayerController : MonoBehaviour
 
 	private static Color GetPercentageColor(float percentage, Color full, Color medium, Color low)
 	{
-		if (percentage > 66.6f)
+		if (percentage > 50)
 			return full;
 
-		return percentage > 33.3f ? medium : low;
+		return percentage > 25 ? medium : low;
 	}
 }
 
