@@ -264,13 +264,13 @@ public class PlayerController : MonoBehaviour
 		else
 			_spaceshipThrusterAudioSource.mute = true;
 
-		if (RemainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown("space"))
+		if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && RemainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown("space"))
 		{
 			_spaceshipShotAudioSourceCollection.ElementAt(0).Play();
 			RemainingEnergy -= CONE_SHOT_ENERGY_REQUIREMENT;
 			_spaceshipSonar.CreateSonarMesh(CONE_SHOT_BEAM_ANGLE_IN_DEGREES, CONE_SHOT_BEAM_LENGTH);
 		}
-		else if (RemainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown(KeyCode.LeftControl))
+		else if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && RemainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			_spaceshipShotAudioSourceCollection.ElementAt(1).Play();
 			RemainingEnergy -= ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT;
