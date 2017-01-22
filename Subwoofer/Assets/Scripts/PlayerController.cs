@@ -217,7 +217,6 @@ public class PlayerController : MonoBehaviour
         {
 	        RemainingHealth = 0;
             _spaceshipExplosionAudioSource.Play();
-            GameOverText.text = "GAME OVER";
             return;
         }
 
@@ -255,11 +254,16 @@ public class PlayerController : MonoBehaviour
     void OnTriggerEnter(Collider pickup)
     {
         //Fuel
-        if (pickup.tag == "Fuel")
-	        _fuelPickupAudioSource.PlayOneShot(_fuelPickupAudioSource.clip, 1);
-			RemainingFuel = MaximumFuel;
-        else
-            RemainingHealth = (RemainingHealth > MaximumHealth * 2 / 3 ? MaximumHealth : RemainingHealth + MaximumHealth / 3);
+	    if (pickup.tag == "Fuel")
+	    {
+		    _fuelPickupAudioSource.PlayOneShot(_fuelPickupAudioSource.clip, 1);
+		    RemainingFuel = MaximumFuel;
+	    }
+	    else
+	    {
+		    _healthPickupAudioSource.PlayOneShot(_healthPickupAudioSource.clip, 1);
+			RemainingHealth = (RemainingHealth > MaximumHealth * 2 / 3 ? MaximumHealth : RemainingHealth + MaximumHealth / 3);
+		}
 
         //Health
         pickup.gameObject.SetActive(false);
@@ -277,6 +281,9 @@ public class PlayerController : MonoBehaviour
 		FuelRemainingText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, fuelRemainingPercentage/UI_SCALE));
 		FuelRemainingBackendText.text = string.Format(FUEL_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
 		FuelRemainingText.color = GetPercentageColor(fuelRemainingPercentage);
+
+		if (RemainingHealth <= 0)
+			GameOverText.text = "GAME OVER";
 	}
 
 	private static int GetPercentage(int currentValue, int maximumValue)
