@@ -300,9 +300,8 @@ public class PlayerController : MonoBehaviour
 	    var incidentVectorAngle = Vector3.Angle(Vector3.up, incidentVector);
 
 		// bounce off the wall
-		// (no bounce if player is oriented straight up, is landing on a flat surface, and is at low speed)
-		const float VERTICAL_LIMIT = 12.5f;
-	    if (incidentVectorAngle > 30 || (ShipRotation < -VERTICAL_LIMIT || ShipRotation > VERTICAL_LIMIT) || other.relativeVelocity.magnitude > 3.5f)
+		// (no bounce if player is oriented straight up, is landing on a flat surface, and is at low speed)		
+	    if (incidentVectorAngle > 30 || !ShipRotationIsWithinVerticalLimit || other.relativeVelocity.magnitude > 3.5f)
 	    {
 		    float magnitude = 50*Math.Max(other.relativeVelocity.magnitude, 3);
 			_rigidBody.AddForce(incidentVector * magnitude);
@@ -315,11 +314,14 @@ public class PlayerController : MonoBehaviour
 			ShipRotation = 0;
 		}
     }
+	
+	private const float VERTICAL_LIMIT = 12.5f;
+	private bool ShipRotationIsWithinVerticalLimit { get { return ShipRotation > -VERTICAL_LIMIT && ShipRotation < VERTICAL_LIMIT;  } }
 
-    /// <summary>
-    /// Handle collisions with pickups
-    /// </summary>
-    void OnTriggerEnter(Collider pickup)
+	/// <summary>
+	/// Handle collisions with pickups
+	/// </summary>
+	void OnTriggerEnter(Collider pickup)
     {
         //Fuel
 	    if (pickup.tag == "Fuel")
@@ -362,7 +364,26 @@ public class PlayerController : MonoBehaviour
 	    EnergyRemainingBackendText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
 		EnergyRemainingText.color = GetPercentageColor(energyRemainingPercentage, new Color(0f, 0.75f, 1f), new Color(0f, 0.5f, 1f), new Color(0f, 0f, 1f));
 
-		if (RemainingHealth <= 0)
+		RaycastHit hit;
+	    if (RemainingHealth > 0 && Physics.Raycast(transform.position, Vector3.down, out hit, 4f))
+	    {
+		    if (ShipRotationIsWithinVerticalLimit)
+		    {
+			    LandingText.text = "LAND";
+			    LandingText.color = Color.green;
+		    }
+		    else
+		    {
+			    LandingText.text = "CANNOT LAND";
+			    LandingText.color = Color.red;
+		    }
+	    }
+	    else
+	    {
+		    LandingText.color = LandingText.color.ToNotVisible();
+	    }
+
+	    if (RemainingHealth <= 0)
 			GameOverText.text = "GAME OVER";
 	}
 
