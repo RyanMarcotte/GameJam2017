@@ -44,7 +44,7 @@ public class MapGenerator : MonoBehaviour
 	{
 		Map = new int[Width, Height];
 
-		if(SurvivingRooms != null)
+		if (SurvivingRooms != null)
 			SurvivingRooms.Clear();
 
 		FillMap();
@@ -53,6 +53,8 @@ public class MapGenerator : MonoBehaviour
 			SmoothMap();
 
 		ProcessMap();
+		if (SurvivingRooms == null)
+			return;
 
 		int[,] borderedMap = new int[Width + BorderSize * 2, Height + BorderSize * 2];
 
@@ -75,14 +77,13 @@ public class MapGenerator : MonoBehaviour
 		meshGenerator.GenerateMesh(borderedMap, 1);
 
 		DetermineSurvivingRoomsLandingPads(meshGenerator);
-		_firstRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).FirstOrDefault(x => x.LandingPadTile.IsValidCoordinate());
+		_firstRoom = SurvivingRooms.OrderBy(x => x.RoomOrder).FirstOrDefault(x => x.LandingPadPosition != null);
 
-		if(_firstRoom != null)
-		{
-			var startingPosition = CoordinateToWorldPoint(_firstRoom.LandingPadTile);
-			Player.gameObject.transform.position = new Vector3(startingPosition.x, startingPosition.y);
-			Camera.gameObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -10);
-		}
+		if (_firstRoom == null || _firstRoom.LandingPadPosition == null)
+			return;
+		
+		Player.gameObject.transform.position = _firstRoom.LandingPadPosition.Value;
+		Camera.gameObject.transform.position = new Vector3(_firstRoom.LandingPadPosition.Value.x, _firstRoom.LandingPadPosition.Value.y, -10);
 	}
 
 	public void FillMap()
@@ -412,7 +413,6 @@ public class MapGenerator : MonoBehaviour
 	public void DetermineSurvivingRoomsLandingPads(MeshGenerator meshGenerator)
 	{
 		var foundLandingPad = false;
-		var count = 0;
 
 		foreach (var room in SurvivingRooms)
 		{
@@ -422,15 +422,13 @@ public class MapGenerator : MonoBehaviour
 			{
 				if (foundLandingPad)
 					continue;
+				var result = meshGenerator.IsLandingPadSquare(tile.TileX, tile.TileY);
 
-				if (meshGenerator.IsLandingPadSquare(tile.TileX, tile.TileY))
+				if(result != null)
 				{
 					foundLandingPad = true;
-					room.LandingPadTile.TileX = tile.TileX;
-					room.LandingPadTile.TileY = tile.TileY;
+					room.LandingPadPosition = result.Value;
 				}
-
-				count++;
 			}
 		}
 	}
@@ -458,7 +456,7 @@ public class Room : IComparable<Room>
 	public List<Coordinate> Tiles;
 	public List<Coordinate> EdgeTiles;
 	public List<Room> NeighbouringRooms;
-	public Coordinate LandingPadTile;
+	public Vector3? LandingPadPosition;
 	public int RoomSize;
 	public int RoomOrder = 0;
 	public bool IsAccessibleFromMainRoom;
@@ -466,7 +464,6 @@ public class Room : IComparable<Room>
 
 	public Room()
 	{
-		LandingPadTile = new Coordinate(-1, -1);
 	}
 
 	public Room(List<Coordinate> roomTiles, int[,] map, int roomOrder)
@@ -476,7 +473,6 @@ public class Room : IComparable<Room>
 		RoomOrder = roomOrder;
 		NeighbouringRooms = new List<Room>();
 		EdgeTiles = new List<Coordinate>();
-		LandingPadTile = new Coordinate(-1, -1);
 		
 		foreach(var tile in Tiles)
 		{

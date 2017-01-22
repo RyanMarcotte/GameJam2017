@@ -195,11 +195,16 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-	public bool IsLandingPadSquare(int xCoordinate, int yCoordinate)
+	public Vector3? IsLandingPadSquare(int xCoordinate, int yCoordinate)
 	{
 		var square = SquareGridMap.Squares[xCoordinate, yCoordinate];
 
-		return square.Configuration == 8;
+		if (square.Configuration == 3)
+		{
+			return square.CenterTop.Position;
+		}
+
+		return null;
 
 	}
 
