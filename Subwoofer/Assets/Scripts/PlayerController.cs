@@ -54,6 +54,7 @@ public class PlayerController : MonoBehaviour
 	public Text FuelRemainingBackendText;
     public Text EnergyRemainingText;
     public Text EnergyRemainingBackendText;
+    public Text LandingText;
     public Text GameOverText;
     public Text VictoryText;
 
