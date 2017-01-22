@@ -19,10 +19,10 @@ public class PlayerController : MonoBehaviour
 	private const int MAXIMUM_HEALTH = 20000;
     private const int MAXIMUM_FUEL = 20000;
 	private const int MAXIMUM_ENERGY = 250;
-	private const int CONE_SHOT_ENERGY_REQUIREMENT = 1;
+	private const int CONE_SHOT_ENERGY_REQUIREMENT = 20;
 	private const int CONE_SHOT_BEAM_ANGLE_IN_DEGREES = 90;
 	private const float CONE_SHOT_BEAM_LENGTH = 4.5f*3;
-	private const int ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT = 5;
+	private const int ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT = CONE_SHOT_ENERGY_REQUIREMENT * 5;
 	private const int ALL_DIRECTION_SHOT_BEAM_ANGLE_IN_DEGREES = 360;
 	private const float ALL_DIRECTION_SHOT_BEAM_LENGTH = 2.25f*3;
 
@@ -274,13 +274,13 @@ public class PlayerController : MonoBehaviour
 		{
 			_spaceshipShotAudioSourceCollection.ElementAt(0).Play();
 			RemainingEnergy -= CONE_SHOT_ENERGY_REQUIREMENT;
-			_spaceshipSonar.CreateSonarMesh(90, 4.5f * 3);
+			_spaceshipSonar.CreateSonarMesh(CONE_SHOT_BEAM_ANGLE_IN_DEGREES, CONE_SHOT_BEAM_LENGTH);
 		}
 		else if (RemainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			_spaceshipShotAudioSourceCollection.ElementAt(1).Play();
 			RemainingEnergy -= ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT;
-			_spaceshipSonar.CreateSonarMesh(360, 2.25f * 3);
+			_spaceshipSonar.CreateSonarMesh(ALL_DIRECTION_SHOT_BEAM_ANGLE_IN_DEGREES, ALL_DIRECTION_SHOT_BEAM_LENGTH);
 		}
 	}
 
@@ -369,7 +369,7 @@ public class PlayerController : MonoBehaviour
 	    int energyRemainingPercentage = GetPercentage(RemainingEnergy, MaximumEnergy);
 	    EnergyRemainingText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, energyRemainingPercentage/UI_SCALE));
 	    EnergyRemainingBackendText.text = string.Format(ENERGY_REMAINING_TEXT_FORMAT, new string(UI_CHARACTER, 100/UI_SCALE));
-	    FuelRemainingText.color = GetPercentageColor(energyRemainingPercentage);
+		EnergyRemainingText.color = GetPercentageColor(energyRemainingPercentage);
 
 		if (RemainingHealth <= 0)
 			GameOverText.text = "GAME OVER";
