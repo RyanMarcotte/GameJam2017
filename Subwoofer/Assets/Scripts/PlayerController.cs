@@ -155,7 +155,24 @@ public class PlayerController : MonoBehaviour
 		_objectivePickupAudioSource = allAudioSources.FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Compare(x.clip.name, "collectObjective") == 0);
 	}
 	
-	//The update function runs each frame
+    //The Update function runs each frame
+    void Update()
+    {
+        if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && RemainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown("space"))
+        {
+            _spaceshipShotAudioSourceCollection.ElementAt(0).Play();
+            RemainingEnergy -= CONE_SHOT_ENERGY_REQUIREMENT;
+            _spaceshipSonar.CreateSonarMesh(CONE_SHOT_BEAM_ANGLE_IN_DEGREES, CONE_SHOT_BEAM_LENGTH);
+        }
+        else if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && RemainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            _spaceshipShotAudioSourceCollection.ElementAt(1).Play();
+            RemainingEnergy -= ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT;
+            _spaceshipSonar.CreateSonarMesh(ALL_DIRECTION_SHOT_BEAM_ANGLE_IN_DEGREES, ALL_DIRECTION_SHOT_BEAM_LENGTH);
+        }
+    }
+
+	//The FixedUpdate function runs at the end of each frame
 	void FixedUpdate()
 	{
 		UpdateUI();
@@ -264,19 +281,6 @@ public class PlayerController : MonoBehaviour
 			_spaceshipThrusterAudioSource.mute = !ThrustersEngaged && Math.Abs(inputX) < float.Epsilon;
 		else
 			_spaceshipThrusterAudioSource.mute = true;
-
-		if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && RemainingEnergy > CONE_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown("space"))
-		{
-			_spaceshipShotAudioSourceCollection.ElementAt(0).Play();
-			RemainingEnergy -= CONE_SHOT_ENERGY_REQUIREMENT;
-			_spaceshipSonar.CreateSonarMesh(CONE_SHOT_BEAM_ANGLE_IN_DEGREES, CONE_SHOT_BEAM_LENGTH);
-		}
-		else if (RemainingHealth > 0 && string.IsNullOrEmpty(VictoryText.text) && RemainingEnergy > ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT && Input.GetKeyDown(KeyCode.LeftControl))
-		{
-			_spaceshipShotAudioSourceCollection.ElementAt(1).Play();
-			RemainingEnergy -= ALL_DIRECTION_SHOT_ENERGY_REQUIREMENT;
-			_spaceshipSonar.CreateSonarMesh(ALL_DIRECTION_SHOT_BEAM_ANGLE_IN_DEGREES, ALL_DIRECTION_SHOT_BEAM_LENGTH);
-		}
 	}
 
 	/// <summary>
